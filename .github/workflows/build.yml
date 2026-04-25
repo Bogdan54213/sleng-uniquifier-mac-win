@@ -1,0 +1,110 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+
+  # ── Windows .exe ─────────────────────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create config.py from secrets
+        shell: pwsh
+        run: |
+          @"
+BOT_TOKEN      = "${{ secrets.BOT_TOKEN }}"
+ADMIN_CHAT_ID  = "${{ secrets.ADMIN_CHAT_ID }}"
+HMAC_SECRET    = "${{ secrets.HMAC_SECRET }}"
+ADMIN_PASSWORD = "${{ secrets.ADMIN_PASSWORD }}"
+"@ | Out-File -FilePath config.py -Encoding utf8NoBOM
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: pip install pyinstaller pillow
+
+      - name: Install FFmpeg
+        run: choco install ffmpeg -y --no-progress
+
+      - name: Copy FFmpeg to build dir
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "builds\electron\ffmpeg" -Force | Out-Null
+          $ff = (Get-Command ffmpeg).Source
+          $fp = (Get-Command ffprobe).Source
+          Copy-Item $ff "builds\electron\ffmpeg\ffmpeg.exe"
+          Copy-Item $fp "builds\electron\ffmpeg\ffprobe.exe"
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Windows installer
+        run: builds\electron\build.bat
+        shell: cmd
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/installer/SlengUniquifier_Setup_v1.0.0.exe
+
+  # ── Mac .dmg ─────────────────────────────────────────────────────────────────
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create config.py from secrets
+        run: |
+          cat > config.py << 'EOF'
+          BOT_TOKEN      = "${{ secrets.BOT_TOKEN }}"
+          ADMIN_CHAT_ID  = "${{ secrets.ADMIN_CHAT_ID }}"
+          HMAC_SECRET    = "${{ secrets.HMAC_SECRET }}"
+          ADMIN_PASSWORD = "${{ secrets.ADMIN_PASSWORD }}"
+          EOF
+          # Remove leading spaces from heredoc
+          sed -i '' 's/^          //' config.py
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: pip3 install pyinstaller pillow
+
+      - name: Install FFmpeg
+        run: brew install ffmpeg
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Mac DMG
+        run: bash builds/electron/build_mac.sh
+
+      - name: Upload Mac DMG (x64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-dmg-x64
+          path: dist/mac/SlengUniquifier_v1.0.0_x64.dmg
+
+      - name: Upload Mac DMG (arm64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-dmg-arm64
+          path: dist/mac/SlengUniquifier_v1.0.0_arm64.dmg

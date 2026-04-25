@@ -1,0 +1,14 @@
+{
+  "name": "sleng-uniquifier",
+  "version": "1.0.0",
+  "description": "Sleng Uniquifier",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack":  "electron-packager . \"Sleng Uniquifier\" --platform=win32 --arch=x64 --out=../../dist/electron-packed --icon=icon.ico --overwrite --asar=false --ignore=node_modules/.cache"
+  },
+  "devDependencies": {
+    "electron":           "^31.0.0",
+    "@electron/packager": "^18.3.5"
+  }
+}
