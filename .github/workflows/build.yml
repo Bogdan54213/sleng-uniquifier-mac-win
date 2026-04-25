@@ -16,12 +16,13 @@ jobs:
       - name: Create config.py from secrets
         shell: pwsh
         run: |
-          @"
-BOT_TOKEN      = "${{ secrets.BOT_TOKEN }}"
-ADMIN_CHAT_ID  = "${{ secrets.ADMIN_CHAT_ID }}"
-HMAC_SECRET    = "${{ secrets.HMAC_SECRET }}"
-ADMIN_PASSWORD = "${{ secrets.ADMIN_PASSWORD }}"
-"@ | Out-File -FilePath config.py -Encoding utf8NoBOM
+          $lines = @(
+            "BOT_TOKEN      = `"${{ secrets.BOT_TOKEN }}`"",
+            "ADMIN_CHAT_ID  = `"${{ secrets.ADMIN_CHAT_ID }}`"",
+            "HMAC_SECRET    = `"${{ secrets.HMAC_SECRET }}`"",
+            "ADMIN_PASSWORD = `"${{ secrets.ADMIN_PASSWORD }}`""
+          )
+          $lines | Out-File -FilePath config.py -Encoding utf8NoBOM
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
@@ -69,14 +70,21 @@ ADMIN_PASSWORD = "${{ secrets.ADMIN_PASSWORD }}"
 
       - name: Create config.py from secrets
         run: |
-          cat > config.py << 'EOF'
-          BOT_TOKEN      = "${{ secrets.BOT_TOKEN }}"
-          ADMIN_CHAT_ID  = "${{ secrets.ADMIN_CHAT_ID }}"
-          HMAC_SECRET    = "${{ secrets.HMAC_SECRET }}"
-          ADMIN_PASSWORD = "${{ secrets.ADMIN_PASSWORD }}"
+          python3 - << 'EOF'
+          import os
+          lines = [
+              f'BOT_TOKEN      = "{os.environ["BOT_TOKEN"]}"',
+              f'ADMIN_CHAT_ID  = "{os.environ["ADMIN_CHAT_ID"]}"',
+              f'HMAC_SECRET    = "{os.environ["HMAC_SECRET"]}"',
+              f'ADMIN_PASSWORD = "{os.environ["ADMIN_PASSWORD"]}"',
+          ]
+          open("config.py", "w").write("\n".join(lines) + "\n")
           EOF
-          # Remove leading spaces from heredoc
-          sed -i '' 's/^          //' config.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_CHAT_ID: ${{ secrets.ADMIN_CHAT_ID }}
+          HMAC_SECRET: ${{ secrets.HMAC_SECRET }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
