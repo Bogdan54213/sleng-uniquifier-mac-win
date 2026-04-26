@@ -50,7 +50,7 @@ exe = EXE(
     name='server',
     debug=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,      # no black terminal window
     onefile=True,
 )
