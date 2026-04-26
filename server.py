@@ -491,8 +491,7 @@ def _cleanup(job_id: str, delay: int = 0):
 # ── Запуск ────────────────────────────────────────────────────────────────────
 
 def main():
-    # Перевіряємо FFmpeg перед стартом
-    check_ffmpeg()
+    check_ffmpeg()  # лише попередження, не exit
 
     url = f'http://{HOST}:{PORT}'
     print(f'\n  🎬  Video Uniquifier — запущено')

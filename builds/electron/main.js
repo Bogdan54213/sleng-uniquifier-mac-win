@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu } = require('electron');
+const { app, BrowserWindow, shell, Menu, dialog } = require('electron');
 const path  = require('path');
 const net   = require('net');
 const { spawn } = require('child_process');
@@ -85,10 +85,24 @@ async function createWindow() {
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
   startServer();
+  let serverOk = false;
   try {
     await waitForPort(PORT);
+    serverOk = true;
   } catch (e) {
     console.error('Server did not start in time');
+  }
+  if (!serverOk) {
+    dialog.showErrorBox(
+      'Помилка запуску',
+      'Не вдалося запустити сервер додатку.\n\n' +
+      'Можливі причини:\n' +
+      '• Антивірус заблокував server.exe\n' +
+      '• Порт 7474 зайнятий іншою програмою\n\n' +
+      'Додай папку програми у виключення антивірусу і спробуй ще раз.'
+    );
+    app.quit();
+    return;
   }
   await createWindow();
 });

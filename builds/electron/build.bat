@@ -30,13 +30,16 @@ copy /y "builds\electron\resources_tmp\server.exe" "builds\electron\resources\se
 rmdir /s /q "builds\electron\resources_tmp" >nul 2>&1
 rmdir /s /q "build_server" >nul 2>&1
 
-:: Copy ffmpeg
-if exist "builds\windows\ffmpeg\ffmpeg.exe" (
-    copy /y "builds\windows\ffmpeg\ffmpeg.exe"  "builds\electron\resources\" >nul
-    copy /y "builds\windows\ffmpeg\ffprobe.exe" "builds\electron\resources\" >nul
-    echo [INFO] FFmpeg copied.
+:: Copy ffmpeg (check both CI path and local path)
+set FFMPEG_SRC=
+if exist "builds\electron\ffmpeg\ffmpeg.exe" set FFMPEG_SRC=builds\electron\ffmpeg
+if exist "builds\windows\ffmpeg\ffmpeg.exe"  set FFMPEG_SRC=builds\windows\ffmpeg
+if defined FFMPEG_SRC (
+    copy /y "%FFMPEG_SRC%\ffmpeg.exe"  "builds\electron\resources\" >nul
+    copy /y "%FFMPEG_SRC%\ffprobe.exe" "builds\electron\resources\" >nul
+    echo [INFO] FFmpeg copied from %FFMPEG_SRC%.
 ) else (
-    echo [WARN] ffmpeg.exe not found in builds\windows\ffmpeg\
+    echo [WARN] ffmpeg.exe not found - video processing will not work!
 )
 
 :: ── 2. npm install ─────────────────────────────────────────────────────────────

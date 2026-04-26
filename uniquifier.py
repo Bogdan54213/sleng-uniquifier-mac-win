@@ -99,9 +99,9 @@ PRESETS: Dict[str, Dict] = {
 
 # ─── Перевірка FFmpeg ──────────────────────────────────────────────────────────
 
-def check_ffmpeg() -> None:
+def check_ffmpeg() -> bool:
     """Перевірка наявності FFmpeg та ffprobe в PATH.
-    Якщо не знайдено — виводить інструкції встановлення і завершує програму."""
+    Повертає True якщо обидва знайдені, False якщо ні (не завершує процес)."""
     missing = []
     for tool in ['ffmpeg', 'ffprobe']:
         try:
@@ -116,22 +116,9 @@ def check_ffmpeg() -> None:
             missing.append(tool)
 
     if missing:
-        print(f"\n❌ Не знайдено інструменти: {', '.join(missing)}\n")
-        print("Встановлення FFmpeg:")
-        system = platform.system()
-        if system == 'Windows':
-            print("  Windows (winget):     winget install ffmpeg")
-            print("  Windows (choco):      choco install ffmpeg")
-            print("  Windows (ручне):      https://ffmpeg.org/download.html")
-        elif system == 'Darwin':
-            print("  macOS (homebrew):     brew install ffmpeg")
-            print("  macOS (manual):       https://ffmpeg.org/download.html")
-        else:
-            print("  Ubuntu/Debian:        sudo apt install ffmpeg")
-            print("  Fedora/RHEL:          sudo dnf install ffmpeg")
-            print("  Arch Linux:           sudo pacman -S ffmpeg")
-        print()
-        sys.exit(1)
+        print(f"[WARN] FFmpeg не знайдено: {', '.join(missing)}")
+        return False
+    return True
 
 
 # ─── Інформація про відео ──────────────────────────────────────────────────────
