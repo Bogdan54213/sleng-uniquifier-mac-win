@@ -30,6 +30,48 @@ if __name__ == '__main__' and sys.platform == 'win32':
     except AttributeError:
         pass
 
+# ─── Пошук ffmpeg / ffprobe ───────────────────────────────────────────────────
+
+def _find_tool(name: str) -> str:
+    """
+    Повертає абсолютний шлях до ffmpeg або ffprobe.
+
+    Порядок пошуку:
+    1. Поруч з server.exe (папка resources встановленого Electron-застосунку).
+       Це головний варіант для кінцевих користувачів.
+    2. Змінна середовища FFMPEG_DIR (для CI або ручного налаштування).
+    3. Просто ім'я — якщо ffmpeg є у системному PATH
+       (розробницьке середовище або ручна установка).
+    """
+    exe = f"{name}.exe" if sys.platform == "win32" else name
+
+    # 1. Поруч з виконуваним файлом (PyInstaller frozen або звичайний .py запуск)
+    candidates = [
+        Path(sys.executable).parent / exe,
+    ]
+    # Якщо PyInstaller витяг файли у тимчасову папку, перевіряємо і її
+    meipass = getattr(sys, '_MEIPASS', None)
+    if meipass:
+        candidates.append(Path(meipass) / exe)
+
+    for c in candidates:
+        if c.exists():
+            return str(c)
+
+    # 2. FFMPEG_DIR змінна середовища
+    ffmpeg_dir = os.environ.get("FFMPEG_DIR", "")
+    if ffmpeg_dir:
+        c = Path(ffmpeg_dir) / exe
+        if c.exists():
+            return str(c)
+
+    # 3. Системний PATH (fallback)
+    return name
+
+
+FFMPEG  = _find_tool("ffmpeg")
+FFPROBE = _find_tool("ffprobe")
+
 # ─── Константи ────────────────────────────────────────────────────────────────
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.m4v'}
@@ -100,13 +142,13 @@ PRESETS: Dict[str, Dict] = {
 # ─── Перевірка FFmpeg ──────────────────────────────────────────────────────────
 
 def check_ffmpeg() -> bool:
-    """Перевірка наявності FFmpeg та ffprobe в PATH.
+    """Перевірка наявності FFmpeg та ffprobe.
     Повертає True якщо обидва знайдені, False якщо ні (не завершує процес)."""
     missing = []
-    for tool in ['ffmpeg', 'ffprobe']:
+    for tool, path in [('ffmpeg', FFMPEG), ('ffprobe', FFPROBE)]:
         try:
             result = subprocess.run(
-                [tool, '-version'],
+                [path, '-version'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
@@ -129,7 +171,7 @@ def get_video_info(input_path: Path) -> Optional[Dict]:
     try:
         result = subprocess.run(
             [
-                'ffprobe',
+                FFPROBE,
                 '-v', 'quiet',
                 '-print_format', 'json',
                 '-show_streams',
@@ -520,7 +562,7 @@ def build_ffmpeg_command(
     )
 
     cmd = [
-        'ffmpeg',
+        FFMPEG,
         '-y',               # Перезаписати вихідний файл без запиту
         '-i', str(input_path),
     ]
