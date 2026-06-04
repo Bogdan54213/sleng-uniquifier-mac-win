@@ -10,17 +10,20 @@ html { height: 100%; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
-    'Helvetica Neue', sans-serif;
+    'Inter', 'Segoe UI Variable', 'Segoe UI', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #0a0a0a;
-  min-height: 100%;
+  /* min-height: 100vh замість 100% — щоб коректно центрувалось у resizable вікні */
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 20px;
+  padding: 20px;
   position: relative;
   overflow-x: hidden;
+  /* у resizable режимі дозволяємо вертикальний scroll коли висота < content */
+  overflow-y: auto;
 }
 
 /* ── Background ── */
@@ -48,17 +51,17 @@ body {
   background-size: 192px 192px; }
 
 /* ── Panel ── */
-.viewport { position: relative; z-index: 10; width: 100%; max-width: 520px; }
+.viewport { position: relative; z-index: 10; width: 100%; max-width: 560px; }
 
 .panel {
   position: relative;
-  background: rgba(255,255,255,.04);
+  background: rgba(20,18,15,.55);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 24px; padding: 36px;
-  box-shadow: 0 8px 40px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.2),
-    inset 0 1px 0 rgba(255,255,255,.07);
+  border: 1px solid rgba(255,138,0,.10);
+  border-radius: 18px; padding: 28px 30px;
+  box-shadow: 0 8px 50px rgba(0,0,0,.6), 0 2px 12px rgba(0,0,0,.4),
+    inset 0 1px 0 rgba(255,180,40,.06);
   overflow: hidden; --mx: 30%; --my: 20%;
 }
 .panel::before {
@@ -76,13 +79,37 @@ body {
 .panel > * { position: relative; z-index: 1; }
 
 /* ── Header ── */
-.hdr { text-align: center; margin-bottom: 28px; }
-.hdr-icon { font-size: 46px; display: block; margin-bottom: 14px; line-height: 1;
-  filter: drop-shadow(0 0 18px rgba(255,138,0,.4)) drop-shadow(0 0 40px rgba(255,138,0,.15)); }
-.hdr-title { font-size: 28px; font-weight: 600; color: rgba(255,255,255,.92);
-  letter-spacing: -.025em; margin-bottom: 7px; line-height: 1.15; }
-.hdr-sub { font-size: 14px; color: rgba(255,255,255,.36); line-height: 1.5; }
-.hr { height: 1px; background: rgba(255,255,255,.06); margin: 0 -36px 28px; }
+.hdr { text-align: center; margin-bottom: 18px; }
+.hdr-logo { display: inline-flex; margin-bottom: 10px; line-height: 0;
+  filter: drop-shadow(0 6px 20px rgba(255,138,0,.32)) drop-shadow(0 0 40px rgba(255,138,0,.12)); }
+.hdr-title { font-size: 24px; font-weight: 700; color: rgba(255,255,255,.95);
+  letter-spacing: -.025em; margin-bottom: 4px; line-height: 1.1; }
+.hdr-sub { font-size: 13px; color: rgba(255,255,255,.4); line-height: 1.4; }
+.hr { height: 1px; background: rgba(255,255,255,.06); margin: 0 -30px 18px; }
+
+/* ── Auth hero (logo + title + sub у формах активації) ── */
+.auth-hero { text-align: center; margin-bottom: 2px; }
+.auth-hero svg { margin-bottom: 4px;
+  filter: drop-shadow(0 4px 14px rgba(255,138,0,.25)); }
+.auth-hero-title { font-size: 17px; font-weight: 600; color: rgba(255,255,255,.92);
+  letter-spacing: -.02em; margin-top: 4px; }
+.auth-hero-sub { font-size: 12.5px; color: rgba(255,255,255,.4); margin-top: 4px; line-height: 1.4; }
+
+/* ── Primary buttons з іконкою всередині ── */
+.btn-primary-large { display: flex; align-items: center; justify-content: center;
+  gap: 9px; height: 48px; }
+.btn-primary-large svg { flex-shrink: 0; }
+
+/* ── Secondary button (вторинна дія, типу «подати запит») ── */
+.btn-secondary { background: rgba(255,255,255,.05) !important;
+  color: rgba(255,255,255,.7) !important; border-color: rgba(255,255,255,.1) !important;
+  box-shadow: none !important; font-weight: 500; }
+.btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,.08) !important;
+  color: rgba(255,255,255,.85) !important; box-shadow: none !important;
+  transform: none !important; }
+
+/* Дрібний hint під primary-кнопкою */
+.auth-hint-tight { margin-top: -2px !important; line-height: 1.45 !important; font-size: 12.5px !important; }
 
 /* ── Sections ── */
 .sec { display: flex; flex-direction: column; gap: 20px; }
@@ -171,13 +198,13 @@ body {
 .tgl.on .tgl-dot { transform: translateX(20px); }
 
 /* ── Primary Button ── */
-.btn-go { width: 100%; height: 52px;
+.btn-go { width: 100%; height: 46px;
   background: linear-gradient(135deg, rgba(255,138,0,.72), rgba(255,200,10,.72));
   backdrop-filter: blur(10px); border: 1px solid rgba(255,138,0,.32);
-  border-radius: 16px; font-size: 16px; font-weight: 600;
+  border-radius: 12px; font-size: 15px; font-weight: 600;
   color: rgba(255,255,255,.96); cursor: pointer; transition: all .2s ease;
   box-shadow: 0 4px 24px rgba(255,138,0,.2); font-family: inherit;
-  -webkit-font-smoothing: antialiased; letter-spacing: -.015em; margin-top: 4px; }
+  -webkit-font-smoothing: antialiased; letter-spacing: -.015em; margin-top: 2px; }
 .btn-go:hover:not(:disabled) { filter: brightness(1.12);
   box-shadow: 0 8px 32px rgba(255,138,0,.32); transform: translateY(-1px); }
 .btn-go:active:not(:disabled) { transform: scale(.98); filter: brightness(.95); }
@@ -273,11 +300,11 @@ body {
 }
 
 /* ── Auth screens ── */
-.auth-form { display: flex; flex-direction: column; gap: 14px; }
+.auth-form { display: flex; flex-direction: column; gap: 11px; }
 .auth-input {
-  width: 100%; height: 48px; background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
-  padding: 0 16px; font-size: 15px; font-family: inherit; color: rgba(255,255,255,.88);
+  width: 100%; height: 44px; background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08); border-radius: 10px;
+  padding: 0 14px; font-size: 14px; font-family: inherit; color: rgba(255,255,255,.88);
   outline: none; transition: border-color .2s ease, background .2s ease;
   -webkit-font-smoothing: antialiased;
 }
@@ -310,8 +337,9 @@ body {
 .btn-copy:hover { background: rgba(255,255,255,.12); color: rgba(255,255,255,.85); }
 .btn-copy.copied { color: rgba(52,199,89,.9); border-color: rgba(52,199,89,.3); }
 
-.divider-text { display: flex; align-items: center; gap: 12px;
-  font-size: 12px; color: rgba(255,255,255,.22); }
+.divider-text { display: flex; align-items: center; gap: 12px; margin: 6px 0;
+  font-size: 11px; color: rgba(255,255,255,.22); text-transform: uppercase;
+  letter-spacing: .12em; font-weight: 500; }
 .divider-text::before, .divider-text::after {
   content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.07); }
 
@@ -372,9 +400,10 @@ body {
 .inline-row { display: flex; gap: 10px; }
 .inline-row .auth-input { flex: 1; }
 
-.pending-icon { font-size: 48px; display: block; text-align: center; margin-bottom: 4px;
-  animation: pulse 2.4s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:.7;transform:scale(1)} 50%{opacity:1;transform:scale(1.06)} }
+.pending-icon { display: flex; justify-content: center; margin-bottom: 4px;
+  animation: pulse 2.4s ease-in-out infinite;
+  filter: drop-shadow(0 4px 14px rgba(255,138,0,.3)); }
+@keyframes pulse { 0%,100%{opacity:.78;transform:scale(1)} 50%{opacity:1;transform:scale(1.06)} }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -541,7 +570,30 @@ body { background: var(--brand-bg); }
   <div class="panel" id="panel">
 
     <div class="hdr">
-      <span class="hdr-icon">🎬</span>
+      <!-- Логотип: квадрат з градієнтом + play-трикутник + жовтий accent dot -->
+      <div class="hdr-logo" aria-label="Sleng Унікалізатор logo">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" width="56" height="56">
+          <defs>
+            <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"   stop-color="#ffd60a"/>
+              <stop offset="60%"  stop-color="#ff7a00"/>
+              <stop offset="100%" stop-color="#cc4400"/>
+            </linearGradient>
+            <linearGradient id="playGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#000"/>
+              <stop offset="100%" stop-color="#1a1a1a"/>
+            </linearGradient>
+          </defs>
+          <!-- основний квадрат з градієнтом -->
+          <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#brandGrad)"/>
+          <!-- внутрішня тінь -->
+          <rect x="4" y="4" width="56" height="56" rx="14" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="1"/>
+          <!-- play-трикутник -->
+          <path d="M26 20 L46 32 L26 44 Z" fill="url(#playGrad)" stroke="#0a0a0a" stroke-width=".5" stroke-linejoin="round"/>
+          <!-- маленький accent dot -->
+          <circle cx="50" cy="14" r="4" fill="#ffd60a" stroke="#0a0a0a" stroke-width="1.5"/>
+        </svg>
+      </div>
       <h1 class="hdr-title">Sleng Унікалізатор</h1>
       <p class="hdr-sub">Зміни цифровий відбиток без видимих змін</p>
     </div>
@@ -550,28 +602,43 @@ body { background: var(--brand-bg); }
     <!-- ── Register ── -->
     <div class="sec off" id="secRegister">
       <div class="auth-form">
-        <div style="text-align:center;margin-bottom:4px">
-          <span style="font-size:38px">👋</span>
-          <div style="font-size:18px;font-weight:600;color:rgba(255,255,255,.88);margin-top:10px;letter-spacing:-.02em">Активація</div>
-          <div style="font-size:13px;color:rgba(255,255,255,.35);margin-top:6px">Швидко — через Telegram-бот курсу</div>
+        <div class="auth-hero">
+          <!-- SVG іконка ключа з градієнтом — замість 👋 -->
+          <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <defs>
+              <linearGradient id="iconKeyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffd60a"/>
+                <stop offset="100%" stop-color="#ff7a00"/>
+              </linearGradient>
+            </defs>
+            <path stroke="url(#iconKeyGrad)" d="M15.5 7.5a4 4 0 1 1-7.5 1.93l-5.5 5.5v3h3v-2h2v-2h2l3.07-3.07A4 4 0 0 1 15.5 7.5z"/>
+            <circle stroke="url(#iconKeyGrad)" cx="15.5" cy="7.5" r=".75" fill="url(#iconKeyGrad)"/>
+          </svg>
+          <div class="auth-hero-title">Активація</div>
+          <div class="auth-hero-sub">Швидко — через Telegram-бот курсу</div>
         </div>
 
         <!-- Швидкий вхід через Telegram (1 клік) -->
-        <button class="btn-go" id="btnQuickLogin">
-          🔑 Увійти через Telegram
+        <button class="btn-go btn-primary-large" id="btnQuickLogin">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.5a9 9 0 1 1-7.5-8.86"/>
+            <path d="m13 3 8 4-8 4"/>
+          </svg>
+          <span>Увійти через Telegram</span>
         </button>
-        <p class="auth-hint" style="margin-top:8px;line-height:1.5;">
-          Тицяй кнопку — відкриється Traffic Sleng Bot.<br>
-          Він одразу пришле код у DM.
+        <p class="auth-hint auth-hint-tight">
+          Тицяй — відкриється Traffic Sleng Bot і пришле код у DM.
         </p>
 
-        <div class="divider-text" style="margin:20px 0 10px;">або повільніше:</div>
+        <div class="divider-text">або вручну</div>
 
         <input class="auth-input" id="regName"    type="text" placeholder="Твоє ім'я" autocomplete="off">
         <input class="auth-input" id="regContact" type="text" placeholder="Telegram @username (необов'язково)" autocomplete="off">
         <div class="auth-err" id="regErr"></div>
-        <button class="btn-go" id="btnRegister" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);">
-          Відправити запит куратору вручну
+        <button class="btn-go btn-secondary" id="btnRegister">
+          Подати запит
         </button>
         <p class="auth-hint">Вже є код? <a id="linkHaveCode">Ввести код активації</a></p>
       </div>
@@ -580,7 +647,19 @@ body { background: var(--brand-bg); }
     <!-- ── Pending ── -->
     <div class="sec off" id="secPending">
       <div class="auth-form">
-        <span class="pending-icon">⏳</span>
+        <div class="pending-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round">
+            <defs>
+              <linearGradient id="iconHourglassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffd60a"/>
+                <stop offset="100%" stop-color="#ff7a00"/>
+              </linearGradient>
+            </defs>
+            <path stroke="url(#iconHourglassGrad)"
+                  d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M17 2v4.172a2 2 0 0 1-.586 1.414L12 12 7.586 7.586A2 2 0 0 1 7 6.172V2"/>
+          </svg>
+        </div>
         <div style="text-align:center">
           <div style="font-size:17px;font-weight:600;color:rgba(255,255,255,.85);letter-spacing:-.02em">Очікуй підтвердження</div>
           <div style="font-size:13px;color:rgba(255,255,255,.35);margin-top:6px;line-height:1.6">Запит відправлено адміну.<br>Він надішле тобі код активації.</div>

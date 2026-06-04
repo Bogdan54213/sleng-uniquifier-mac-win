@@ -178,12 +178,15 @@ async function createWindow() {
     : path.join(__dirname, iconFile);
 
   mainWindow = new BrowserWindow({
-    width:           580,
-    height:          750,
-    resizable:       false,
+    width:           620,
+    height:          820,
+    minWidth:        520,
+    minHeight:       640,
+    resizable:       true,
+    fullscreenable:  true,
     title:           'Sleng Унікалізатор',
     icon:            iconPath,
-    backgroundColor: '#0d1b34',
+    backgroundColor: '#0a0a0a',
     show:            false,
     webPreferences: {
       nodeIntegration:  false,
@@ -191,7 +194,16 @@ async function createWindow() {
     },
   });
 
+  // Прибираємо menubar повністю — професійний нативний look без зайвого File/Edit/View
   Menu.setApplicationMenu(null);
+
+  // Хоткеї: F11 = fullscreen toggle, Ctrl+0/+/- = zoom
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F11' && input.type === 'keyDown') {
+      mainWindow.setFullScreen(!mainWindow.isFullScreen());
+      event.preventDefault();
+    }
+  });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
