@@ -601,28 +601,39 @@ body { background: var(--brand-bg); }
   <div class="panel" id="panel">
 
     <div class="hdr">
-      <!-- Логотип: квадрат з градієнтом + play-трикутник + жовтий accent dot -->
+      <!-- Логотип: squircle з brand-gradient + стилізований fingerprint pattern.
+           Метафора: «цифровий відбиток» — точна суть інструменту.
+           Стиль: iOS app-icon (gloss, soft shadow, inner highlight). -->
       <div class="hdr-logo" aria-label="Sleng Унікалізатор logo">
-        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" width="56" height="56">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" width="60" height="60">
           <defs>
             <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%"   stop-color="#ffd60a"/>
-              <stop offset="60%"  stop-color="#ff7a00"/>
-              <stop offset="100%" stop-color="#cc4400"/>
+              <stop offset="55%"  stop-color="#ff7a00"/>
+              <stop offset="100%" stop-color="#b83b00"/>
             </linearGradient>
-            <linearGradient id="playGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#000"/>
-              <stop offset="100%" stop-color="#1a1a1a"/>
+            <linearGradient id="glossGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%"   stop-color="rgba(255,255,255,.22)"/>
+              <stop offset="55%"  stop-color="rgba(255,255,255,0)"/>
             </linearGradient>
           </defs>
-          <!-- основний квадрат з градієнтом -->
-          <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#brandGrad)"/>
-          <!-- внутрішня тінь -->
-          <rect x="4" y="4" width="56" height="56" rx="14" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="1"/>
-          <!-- play-трикутник -->
-          <path d="M26 20 L46 32 L26 44 Z" fill="url(#playGrad)" stroke="#0a0a0a" stroke-width=".5" stroke-linejoin="round"/>
-          <!-- маленький accent dot -->
-          <circle cx="50" cy="14" r="4" fill="#ffd60a" stroke="#0a0a0a" stroke-width="1.5"/>
+          <!-- Базова squircle-форма з brand-gradient -->
+          <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#brandGrad)"/>
+          <!-- Скляний gloss зверху (як у iOS) -->
+          <rect x="2" y="2" width="60" height="32" rx="17" fill="url(#glossGrad)"/>
+          <!-- Хайлайт-рамка для об'єму -->
+          <rect x="2.5" y="2.5" width="59" height="59" rx="16.5"
+                fill="none" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+          <!-- Тонка темна обідка (визначає форму на чорному фоні) -->
+          <rect x="2" y="2" width="60" height="60" rx="17"
+                fill="none" stroke="rgba(0,0,0,.28)" stroke-width=".5"/>
+          <!-- Fingerprint pattern: 3 концентричні арки + ядро -->
+          <g stroke="#1a1208" stroke-width="2.4" stroke-linecap="round" fill="none" opacity=".92">
+            <path d="M20 40 Q20 25 32 25 Q44 25 44 40"/>
+            <path d="M25 42 Q25 30 32 30 Q39 30 39 42"/>
+            <path d="M30 43 Q30 35 32 35 Q34 35 34 43"/>
+          </g>
+          <circle cx="32" cy="35" r="1.7" fill="#1a1208"/>
         </svg>
       </div>
       <h1 class="hdr-title">Sleng Унікалізатор</h1>
@@ -634,28 +645,30 @@ body { background: var(--brand-bg); }
     <div class="sec off" id="secRegister">
       <div class="auth-form">
         <div class="auth-hero">
-          <!-- SVG іконка ключа з градієнтом — замість 👋 -->
-          <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke-width="1.6"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <!-- Lucide "key-round" icon (industry-standard). Brand-gradient stroke. -->
+          <svg viewBox="0 0 24 24" width="44" height="44" fill="none"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <defs>
               <linearGradient id="iconKeyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ffd60a"/>
+                <stop offset="0%"   stop-color="#ffd60a"/>
                 <stop offset="100%" stop-color="#ff7a00"/>
               </linearGradient>
             </defs>
-            <path stroke="url(#iconKeyGrad)" d="M15.5 7.5a4 4 0 1 1-7.5 1.93l-5.5 5.5v3h3v-2h2v-2h2l3.07-3.07A4 4 0 0 1 15.5 7.5z"/>
-            <circle stroke="url(#iconKeyGrad)" cx="15.5" cy="7.5" r=".75" fill="url(#iconKeyGrad)"/>
+            <g stroke="url(#iconKeyGrad)">
+              <path d="m21 2-9.6 9.6"/>
+              <circle cx="7.5" cy="15.5" r="5.5"/>
+              <path d="m21 2-3 3 2 2 3-3-2-2"/>
+              <path d="m18 5-2.4 2.4"/>
+            </g>
           </svg>
           <div class="auth-hero-title">Активація</div>
           <div class="auth-hero-sub">Швидко — через Telegram-бот курсу</div>
         </div>
 
-        <!-- Швидкий вхід через Telegram (1 клік) -->
+        <!-- Швидкий вхід через Telegram (1 клік). Іконка — офіційний Telegram paper-plane. -->
         <button class="btn-go btn-primary-large" id="btnQuickLogin">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 12.5a9 9 0 1 1-7.5-8.86"/>
-            <path d="m13 3 8 4-8 4"/>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M22.05 2.45a1.5 1.5 0 0 0-1.55-.27L2.4 9.04c-1.15.42-1.18 2.04-.04 2.5l4.39 1.74 2.05 6.6c.14.46.46.83.89 1.03.42.2.92.2 1.34-.01.2-.1.39-.22.55-.4l2.71-2.84 4.77 3.51c.27.2.6.32.94.34.93.04 1.74-.62 1.91-1.55l2.7-15.36c.1-.6-.13-1.21-.6-1.6zM9.5 14.7l-.8 2.6-1.7-5.5L18.9 5.4 9.5 14.7z"/>
           </svg>
           <span>Увійти через Telegram</span>
         </button>
@@ -679,16 +692,19 @@ body { background: var(--brand-bg); }
     <div class="sec off" id="secPending">
       <div class="auth-form">
         <div class="pending-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke-width="1.6"
-               stroke-linecap="round" stroke-linejoin="round">
+          <!-- Lucide "clock-3" — чистіше за hourglass, читається у малому розмірі -->
+          <svg viewBox="0 0 24 24" width="44" height="44" fill="none"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <defs>
-              <linearGradient id="iconHourglassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ffd60a"/>
+              <linearGradient id="iconClockGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stop-color="#ffd60a"/>
                 <stop offset="100%" stop-color="#ff7a00"/>
               </linearGradient>
             </defs>
-            <path stroke="url(#iconHourglassGrad)"
-                  d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M17 2v4.172a2 2 0 0 1-.586 1.414L12 12 7.586 7.586A2 2 0 0 1 7 6.172V2"/>
+            <g stroke="url(#iconClockGrad)">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 7v5l3 1.5"/>
+            </g>
           </svg>
         </div>
         <div style="text-align:center">
