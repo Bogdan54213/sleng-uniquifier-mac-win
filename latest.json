@@ -1,7 +1,7 @@
 {
-  "version": "1.0.1",
-  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.1/SlengUniquifier_Setup_v1.0.1.exe",
-  "notes":   "v1.0.1: deep-link auth + бренд-редизайн (чорний/оранж/жовтий) ",
-  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.1/SlengUniquifier_v1.0.1_x64.dmg",
-  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.1/SlengUniquifier_v1.0.1_arm64.dmg"
+  "version": "1.0.3",
+  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.3/SlengUniquifier_Setup_v1.0.3.exe",
+  "notes":   "v1.0.3: бренд-шрифти Orbitron + Cascadia Code (digital) ",
+  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.3/SlengUniquifier_v1.0.3_x64.dmg",
+  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.3/SlengUniquifier_v1.0.3_arm64.dmg"
 }
