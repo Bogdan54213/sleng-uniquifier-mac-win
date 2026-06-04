@@ -400,13 +400,27 @@ body {
       <div class="auth-form">
         <div style="text-align:center;margin-bottom:4px">
           <span style="font-size:38px">👋</span>
-          <div style="font-size:18px;font-weight:600;color:rgba(255,255,255,.88);margin-top:10px;letter-spacing:-.02em">Реєстрація</div>
-          <div style="font-size:13px;color:rgba(255,255,255,.35);margin-top:6px">Заповни форму — адмін підтвердить доступ</div>
+          <div style="font-size:18px;font-weight:600;color:rgba(255,255,255,.88);margin-top:10px;letter-spacing:-.02em">Активація</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.35);margin-top:6px">Швидко — через Telegram-бот курсу</div>
         </div>
+
+        <!-- Швидкий вхід через Telegram (1 клік) -->
+        <button class="btn-go" id="btnQuickLogin" style="background:linear-gradient(90deg,#229ED9,#1c8bc0);">
+          🔑 Увійти через Telegram
+        </button>
+        <p class="auth-hint" style="margin-top:8px;line-height:1.5;">
+          Тицяй кнопку — відкриється Traffic Sleng Bot.<br>
+          Він одразу пришле код у DM.
+        </p>
+
+        <div class="divider-text" style="margin:20px 0 10px;">або повільніше:</div>
+
         <input class="auth-input" id="regName"    type="text" placeholder="Твоє ім'я" autocomplete="off">
         <input class="auth-input" id="regContact" type="text" placeholder="Telegram @username (необов'язково)" autocomplete="off">
         <div class="auth-err" id="regErr"></div>
-        <button class="btn-go" id="btnRegister">Відправити запит</button>
+        <button class="btn-go" id="btnRegister" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);">
+          Відправити запит куратору вручну
+        </button>
         <p class="auth-hint">Вже є код? <a id="linkHaveCode">Ввести код активації</a></p>
       </div>
     </div>
@@ -711,6 +725,34 @@ function switchToAuth(sec) {
   sec.classList.add('enter');
   sec.addEventListener('animationend', () => sec.classList.remove('enter'), { once: true });
 }
+
+// ── Quick login via Telegram deep-link ───────────────────────────────────────
+// Студент тицяє → відкриваємо https://t.me/tst_education_bot?start=uniq_<MID>
+// Курсовий бот ловить /start uniq_<MID>, перевіряє доступ і шле код у DM.
+const TELEGRAM_BOT_USERNAME = 'tst_education_bot';
+
+document.getElementById('btnQuickLogin')?.addEventListener('click', async () => {
+  let mid = '';
+  try {
+    const r = await fetch('/api/auth/status');
+    const d = await r.json();
+    mid = d.machine_id || '';
+  } catch {}
+  if (!mid) {
+    alert('Не вдалось отримати Machine ID — переконайся що сервер запущений');
+    return;
+  }
+  const url = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=uniq_${encodeURIComponent(mid)}`;
+  // Через Electron — відкриваємо у браузері (shell.openExternal)
+  if (window.electronAPI?.openExternal) {
+    window.electronAPI.openExternal(url);
+  } else {
+    window.open(url, '_blank');
+  }
+  // Перемикаємо на екран «вставити код» (secPending)
+  pendingMid.textContent = mid;
+  switchToAuth(secPending);
+});
 
 // ── Register ──────────────────────────────────────────────────────────────────
 btnRegister.addEventListener('click', async () => {
