@@ -23,6 +23,14 @@ PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
 
+; --- Auto-update support ---
+; CloseApplications=force — installer тихо закриє запущену стару версію.
+; RestartApplications=yes — після install автоматично перезапустить її.
+; Saves a manual "close app before update" prompt.
+CloseApplications=force
+RestartApplications=yes
+CloseApplicationsFilter=*.exe,*.dll
+
 [Languages]
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 Name: "english";   MessagesFile: "compiler:Default.isl"
@@ -38,4 +46,7 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}";  Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+; nowait — installer не блокується запуском
+; postinstall — запустити після завершення установки
+; (НЕ використовуємо skipifsilent — щоб при /SILENT-update новий .exe запускався автоматом)
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall

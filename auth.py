@@ -42,32 +42,95 @@ def init_db():
 
 
 # ── Machine ID ────────────────────────────────────────────────────────────────
+#
+# СТАРИЙ підхід використовував `wmic baseboard get serialnumber` + diskdrive,
+# але:
+#   1. У Windows 11 24H2 wmic.exe ВИДАЛИЛИ — на нових ПК це падало з
+#      FileNotFoundError, sub.check_output повертало порожнечу → fallback
+#      на uuid.getnode() який може давати дублікати на схожих машинах.
+#   2. Виклик wmic займає 1-2 секунди при кожному отриманні machine_id.
+#
+# НОВИЙ підхід: один раз генеруємо стійкий UUID v4 і зберігаємо його у файл
+# поряд з auth.db. Файл живе у %LOCALAPPDATA%\SlengUniquifier\machine_id
+# — переживає всі апдейти/перевстановлення додатку.
+#
+# Якщо студент перевстановлює Windows або міняє диск — machine_id оновиться,
+# і йому треба буде запитати новий код. Це нормальна поведінка.
+
+import uuid as _uuid
+
+
+def _machine_id_file() -> Path:
+    return get_db_path().parent / 'machine_id'
+
 
 def get_machine_id() -> str:
+    """
+    Стійкий unique-ID цієї машини у форматі XXXX-XXXX-XXXX-XXXX.
+
+    Генерується ОДИН раз при першому виклику і зберігається у файл.
+    Подальші виклики просто читають з файлу — ~миттєво.
+    """
+    mid_file = _machine_id_file()
+
+    # 1. Спроба прочитати існуючий
     try:
-        if sys.platform == 'win32':
-            mb = subprocess.check_output(
-                'wmic baseboard get serialnumber',
-                shell=True, stderr=subprocess.DEVNULL
-            ).decode(errors='ignore').split('\n')
-            mb = ''.join(mb[1:]).strip()
-
-            disk = subprocess.check_output(
-                'wmic diskdrive get serialnumber',
-                shell=True, stderr=subprocess.DEVNULL
-            ).decode(errors='ignore').split('\n')
-            disk = ''.join(disk[1:]).strip()
-
-            raw = f"{mb}:{disk}"
-            if raw.strip(':'):
-                h = hashlib.sha256(raw.encode()).hexdigest()[:16].upper()
-                return f"{h[:4]}-{h[4:8]}-{h[8:12]}-{h[12:16]}"
+        if mid_file.exists():
+            stored = mid_file.read_text(encoding='utf-8').strip()
+            if _is_valid_machine_id(stored):
+                return stored
     except Exception:
         pass
 
-    import uuid
-    h = hashlib.sha256(str(uuid.getnode()).encode()).hexdigest()[:16].upper()
-    return f"{h[:4]}-{h[4:8]}-{h[8:12]}-{h[12:16]}"
+    # 2. Генеруємо новий, спробуючи прив'язати до системних даних для стабільності
+    try:
+        # На Windows беремо реальний MachineGuid з реєстру — це системний
+        # ID який не змінюється до перевстановлення Windows. Якщо доступний —
+        # ідеально (детермінований і стійкий).
+        if sys.platform == 'win32':
+            try:
+                import winreg
+                with winreg.OpenKey(
+                    winreg.HKEY_LOCAL_MACHINE,
+                    r"SOFTWARE\Microsoft\Cryptography",
+                    0,
+                    winreg.KEY_READ | winreg.KEY_WOW64_64KEY,
+                ) as k:
+                    guid, _ = winreg.QueryValueEx(k, "MachineGuid")
+                    h = hashlib.sha256(guid.encode()).hexdigest()[:16].upper()
+                    mid = f"{h[:4]}-{h[4:8]}-{h[8:12]}-{h[12:16]}"
+                    try:
+                        mid_file.write_text(mid, encoding='utf-8')
+                    except OSError:
+                        pass
+                    return mid
+            except (ImportError, FileNotFoundError, OSError):
+                pass
+
+        # На Mac/Linux або якщо реєстр недоступний — використовуємо випадковий
+        # UUID4 (зберігається у файл, тож стабільний для цього інсталу).
+        raw = _uuid.uuid4().hex
+        h = hashlib.sha256(raw.encode()).hexdigest()[:16].upper()
+        mid = f"{h[:4]}-{h[4:8]}-{h[8:12]}-{h[12:16]}"
+        try:
+            mid_file.write_text(mid, encoding='utf-8')
+        except OSError:
+            pass
+        return mid
+    except Exception:
+        # Найгірший випадок — фолбек на mac-адресу. Хоча б щось.
+        h = hashlib.sha256(str(_uuid.getnode()).encode()).hexdigest()[:16].upper()
+        return f"{h[:4]}-{h[4:8]}-{h[8:12]}-{h[12:16]}"
+
+
+def _is_valid_machine_id(s: str) -> bool:
+    """XXXX-XXXX-XXXX-XXXX, hex chars, 19 chars."""
+    if not s or len(s) != 19:
+        return False
+    parts = s.split('-')
+    if len(parts) != 4:
+        return False
+    return all(len(p) == 4 and all(c in '0123456789ABCDEF' for c in p.upper()) for p in parts)
 
 
 # ── Реєстрація ────────────────────────────────────────────────────────────────

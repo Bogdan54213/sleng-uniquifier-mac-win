@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sleng Унікалізатор — Інструкція для Mac</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: #fff;
+    color: #1a1a2e;
+    padding: 40px;
+    max-width: 750px;
+    margin: 0 auto;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  header {
+    text-align: center;
+    padding-bottom: 24px;
+    border-bottom: 3px solid #0d1b34;
+    margin-bottom: 32px;
+  }
+
+  header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0d1b34;
+    letter-spacing: -0.5px;
+  }
+
+  header p {
+    color: #555;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: #0d1b34;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  .step {
+    margin-bottom: 28px;
+    page-break-inside: avoid;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .step-num {
+    background: #0d1b34;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .step-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0d1b34;
+  }
+
+  .step-body {
+    padding-left: 44px;
+  }
+
+  .step-body ol, .step-body ul {
+    padding-left: 18px;
+  }
+
+  .step-body li {
+    margin-bottom: 5px;
+  }
+
+  .chip {
+    display: inline-block;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    color: #3730a3;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .note {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+
+  .note strong {
+    color: #b45309;
+  }
+
+  .code-block {
+    background: #1e293b;
+    color: #7dd3fc;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-top: 10px;
+    user-select: all;
+    letter-spacing: 0.3px;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 28px 0;
+  }
+
+  .tip-box {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 28px;
+    font-size: 13px;
+  }
+
+  .tip-box strong {
+    color: #15803d;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  footer {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 11px;
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  @media print {
+    body { padding: 20px; }
+    .step { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sleng Унікалізатор</h1>
+  <p>Інструкція зі встановлення для macOS</p>
+  <span class="badge">macOS 12 Monterey і новіше</span>
+</header>
+
+<!-- STEP 1 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">1</div>
+    <div class="step-title">Визнач свій Mac</div>
+  </div>
+  <div class="step-body">
+    <ol>
+      <li>Клікни на <strong></strong> (яблуко) у верхньому лівому куті екрану</li>
+      <li>Вибери <strong>"About This Mac"</strong></li>
+      <li>Подивись на рядок <strong>"Chip"</strong> або <strong>"Processor"</strong>:</li>
+    </ol>
+    <br>
+    <ul style="list-style:none; padding-left:0;">
+      <li>🔵 <span class="chip">Apple M1 / M2 / M3 / M4</span> → завантажуй файл <strong>mac-dmg-arm64</strong></li>
+      <li style="margin-top:6px;">🔵 <span class="chip">Intel Core i5 / i7 / i9</span> → завантажуй файл <strong>mac-dmg-x64</strong></li>
+    </ul>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- STEP 2 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">2</div>
+    <div class="step-title">Відкрий та встанови додаток</div>
+  </div>
+  <div class="step-body">
+    <ol>
+      <li>Двічі клікни на завантажений файл <strong>SlengUniquifier_v1.0.0_xxx.dmg</strong></li>
+      <li>Відкриється вікно з іконкою додатку</li>
+      <li>Перетягни <strong>Sleng Uniquifier</strong> у папку <strong>Applications</strong></li>
+      <li>Дочекайся завершення копіювання</li>
+    </ol>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- STEP 3 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">3</div>
+    <div class="step-title">Перший запуск (важливо!)</div>
+  </div>
+  <div class="step-body">
+    <ol>
+      <li>Відкрий <strong>Finder</strong> → зліва клікни <strong>Applications</strong></li>
+      <li>Знайди <strong>Sleng Uniquifier</strong></li>
+      <li><strong>Клікни правою кнопкою миші</strong> на додатку → вибери <strong>"Open"</strong></li>
+      <li>З'явиться попередження — клікни <strong>"Open"</strong> ще раз</li>
+    </ol>
+    <div class="note">
+      <strong>⚠️ Увага:</strong> Не відкривай подвійним кліком при першому запуску — тільки через правою кнопку миші → Open. Це обійде захист macOS Gatekeeper.
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- STEP 4 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">4</div>
+    <div class="step-title">Якщо кнопки "Open" немає — Privacy & Security</div>
+  </div>
+  <div class="step-body">
+    <ol>
+      <li>Відкрий <strong>System Settings</strong> (Системні налаштування)</li>
+      <li>Вибери розділ <strong>Privacy &amp; Security</strong></li>
+      <li>Прокрути вниз — побачиш повідомлення про Sleng Uniquifier</li>
+      <li>Клікни <strong>"Open Anyway"</strong></li>
+      <li>Введи пароль свого Mac → натисни Enter</li>
+    </ol>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- STEP 5 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">5</div>
+    <div class="step-title">Якщо нічого не допомогло — Terminal</div>
+  </div>
+  <div class="step-body">
+    <ol>
+      <li>Натисни <strong>Cmd + Space</strong> → напиши <strong>Terminal</strong> → натисни Enter</li>
+      <li>Встав наступну команду і натисни Enter:</li>
+    </ol>
+    <div class="code-block">xattr -cr "/Applications/Sleng Uniquifier.app"</div>
+    <ol start="3" style="margin-top:10px;">
+      <li>Після цього відкривай додаток звичайним подвійним кліком</li>
+    </ol>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- STEP 6 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">6</div>
+    <div class="step-title">Реєстрація та активація</div>
+  </div>
+  <div class="step-body">
+    <ol>
+      <li>При першому запуску з'явиться форма реєстрації</li>
+      <li>Введи своє <strong>ім'я</strong> та <strong>контакт</strong> (Telegram або email)</li>
+      <li>Натисни <strong>"Відправити заявку"</strong></li>
+      <li>Очікуй активаційний код від адміністратора</li>
+      <li>Після отримання коду — натисни <strong>"У мене є код"</strong></li>
+      <li>Введи код та натисни <strong>"Активувати"</strong></li>
+      <li>Готово — додаток відкриється!</li>
+    </ol>
+  </div>
+</div>
+
+<div class="tip-box">
+  <strong>✅ Все готово!</strong>
+  Якщо виникли проблеми зі встановленням — напиши адміністратору в Telegram.
+</div>
+
+<footer>
+  Sleng Унікалізатор v1.0.0 · macOS інструкція
+</footer>
+
+</body>
+</html>

@@ -1,13 +1,18 @@
-const { app, BrowserWindow, shell, Menu, dialog } = require('electron');
+const { app, BrowserWindow, shell, Menu, dialog, clipboard } = require('electron');
 const path  = require('path');
+const fs    = require('fs');
+const os    = require('os');
 const net   = require('net');
 const { spawn } = require('child_process');
+const updater = require('./updater');
 
 const PORT = 7474;
-let serverProcess = null;
-let mainWindow    = null;
+let serverProcess  = null;
+let serverStderr   = '';     // зібраний stderr якщо процес впав
+let serverExitCode = null;   // exit code якщо процес закінчився передчасно
+let mainWindow     = null;
 
-// ── Locate server binary (cross-platform) ─────────────────────────────────────
+// ── Шлях до server.exe (cross-platform) ──────────────────────────────────────
 function serverExePath() {
   const bin = process.platform === 'win32' ? 'server.exe' : 'server';
   if (app.isPackaged) {
@@ -16,11 +21,21 @@ function serverExePath() {
   return path.join(__dirname, 'resources', bin);
 }
 
-// ── Wait for TCP port to accept connections ───────────────────────────────────
-function waitForPort(port, timeoutMs = 20000) {
+// ── Лог-файл (туди ж куди пише server.exe) ──────────────────────────────────
+function logFilePath() {
+  const base = process.env.LOCALAPPDATA || process.env.APPDATA || os.homedir();
+  return path.join(base, 'SlengUniquifier', 'server.log');
+}
+
+// ── Очікуємо TCP-порт ────────────────────────────────────────────────────────
+function waitForPort(port, timeoutMs = 25000) {
   return new Promise((resolve, reject) => {
     const deadline = Date.now() + timeoutMs;
     const attempt  = () => {
+      // Якщо server.exe вже впав — далі чекати немає сенсу
+      if (serverExitCode !== null) {
+        return reject(new Error(`Сервер завершився передчасно (код ${serverExitCode})`));
+      }
       const sock = new net.Socket();
       sock.setTimeout(400);
       sock.on('connect', () => { sock.destroy(); resolve(); });
@@ -29,24 +44,133 @@ function waitForPort(port, timeoutMs = 20000) {
       sock.connect(port, '127.0.0.1');
     };
     const retry = () => {
-      if (Date.now() >= deadline) return reject(new Error('Server startup timeout'));
+      if (Date.now() >= deadline) return reject(new Error('Сервер не відкрив порт за 25 сек'));
       setTimeout(attempt, 200);
     };
     attempt();
   });
 }
 
-// ── Start Python server ───────────────────────────────────────────────────────
+// ── Старт Python-сервера ─────────────────────────────────────────────────────
 function startServer() {
   const exePath = serverExePath();
+
+  if (!fs.existsSync(exePath)) {
+    throw new Error(`Файл server.exe не знайдено за шляхом:\n${exePath}\n\n` +
+                    `Можливо, антивірус видалив його після встановлення.`);
+  }
+
+  console.log('[main] starting server:', exePath);
+
   serverProcess = spawn(exePath, [], {
-    stdio:    'ignore',
+    // pipe щоб зловити будь-яку stderr-помилку (раніше було ignore — і помилки зникали)
+    stdio: ['ignore', 'pipe', 'pipe'],
     detached: false,
+    windowsHide: true,
   });
-  serverProcess.on('error', err => console.error('Server spawn error:', err));
+
+  serverProcess.on('error', err => {
+    console.error('[main] server spawn error:', err);
+    serverStderr += `\n[spawn error] ${err.message}`;
+    serverExitCode = -1;
+  });
+
+  serverProcess.stderr.on('data', chunk => {
+    const s = chunk.toString('utf-8');
+    serverStderr += s;
+    console.error('[server stderr]', s);
+  });
+
+  serverProcess.stdout.on('data', chunk => {
+    console.log('[server stdout]', chunk.toString('utf-8'));
+  });
+
+  serverProcess.on('exit', (code, signal) => {
+    serverExitCode = code !== null ? code : (signal ? -signal : -999);
+    console.log(`[main] server exited code=${code} signal=${signal}`);
+  });
 }
 
-// ── Create main window ────────────────────────────────────────────────────────
+// ── Діагностичний діалог при невдалому старті ───────────────────────────────
+function showDiagnosticDialog(error) {
+  const logPath = logFilePath();
+  let tailOfLog = '';
+  try {
+    if (fs.existsSync(logPath)) {
+      const content = fs.readFileSync(logPath, 'utf-8');
+      // Останні ~2000 символів — найсвіжіше
+      tailOfLog = content.length > 2000 ? content.slice(-2000) : content;
+    }
+  } catch (e) {
+    tailOfLog = `(не вдалось прочитати лог: ${e.message})`;
+  }
+
+  const reasons = [];
+  if (serverExitCode !== null && serverExitCode !== 0) {
+    reasons.push(`• Сервер впав з кодом ${serverExitCode}`);
+  }
+  if (serverStderr.toLowerCase().includes('access') ||
+      serverStderr.toLowerCase().includes('permission')) {
+    reasons.push('• Брак прав доступу до системних папок');
+  }
+  if (serverStderr.toLowerCase().includes('address already in use') ||
+      serverStderr.includes('10048')) {
+    reasons.push('• Порт 7474 уже зайнятий іншою програмою');
+  }
+  if (!fs.existsSync(serverExePath())) {
+    reasons.push('• server.exe видалено антивірусом');
+  }
+
+  const text = (
+    `Не вдалося запустити сервер додатку.\n\n` +
+    `Помилка: ${error.message || error}\n\n` +
+    (reasons.length ? `Ймовірні причини:\n${reasons.join('\n')}\n\n` : '') +
+    `Що робити:\n` +
+    `1. Додай папку «Sleng Uniquifier» у виключення антивірусу і Windows Defender\n` +
+    `2. Перезапусти додаток\n` +
+    `3. Якщо не допомогло — кинь повний лог куратору\n\n` +
+    `Лог: ${logPath}`
+  );
+
+  const result = dialog.showMessageBoxSync({
+    type: 'error',
+    title: 'Помилка запуску',
+    message: 'Sleng Уніфікатор не зміг запуститись',
+    detail: text,
+    buttons: [
+      'Скопіювати лог у буфер',
+      'Відкрити лог-файл',
+      'Закрити',
+    ],
+    defaultId: 0,
+    cancelId: 2,
+  });
+
+  if (result === 0) {
+    // Копіюємо лог + наш stderr у буфер
+    const full = `==== SLENG UNIQUIFIER ERROR LOG ====\n` +
+                 `OS: ${process.platform} ${process.arch}\n` +
+                 `Electron: ${process.versions.electron}\n` +
+                 `Time: ${new Date().toISOString()}\n` +
+                 `Exit code: ${serverExitCode}\n\n` +
+                 `==== Electron-side stderr ====\n${serverStderr || '(empty)'}\n\n` +
+                 `==== server.log (last 2000 chars) ====\n${tailOfLog || '(no log file)'}`;
+    clipboard.writeText(full);
+    dialog.showMessageBoxSync({
+      type: 'info',
+      message: 'Лог скопійовано',
+      detail: 'Вставляй куратору в Telegram.',
+    });
+  } else if (result === 1) {
+    if (fs.existsSync(logPath)) {
+      shell.openPath(logPath);
+    } else {
+      dialog.showMessageBoxSync({ type: 'warning', message: 'Лог-файл ще не створено' });
+    }
+  }
+}
+
+// ── Створення головного вікна ────────────────────────────────────────────────
 async function createWindow() {
   const iconFile  = process.platform === 'win32' ? 'icon.ico' : 'icon.icns';
   const iconPath  = app.isPackaged
@@ -82,35 +206,44 @@ async function createWindow() {
   await mainWindow.loadURL(`http://127.0.0.1:${PORT}`);
 }
 
-// ── App lifecycle ─────────────────────────────────────────────────────────────
+// ── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
-  startServer();
-  let serverOk = false;
   try {
-    await waitForPort(PORT);
-    serverOk = true;
+    startServer();
   } catch (e) {
-    console.error('Server did not start in time');
-  }
-  if (!serverOk) {
-    dialog.showErrorBox(
-      'Помилка запуску',
-      'Не вдалося запустити сервер додатку.\n\n' +
-      'Можливі причини:\n' +
-      '• Антивірус заблокував server.exe\n' +
-      '• Порт 7474 зайнятий іншою програмою\n\n' +
-      'Додай папку програми у виключення антивірусу і спробуй ще раз.'
-    );
+    showDiagnosticDialog(e);
     app.quit();
     return;
   }
+
+  try {
+    await waitForPort(PORT);
+  } catch (e) {
+    console.error('[main] waitForPort failed:', e);
+    showDiagnosticDialog(e);
+    app.quit();
+    return;
+  }
+
   await createWindow();
+
+  // Auto-update — перевіряємо через 10 сек після старту.
+  // Якщо є нова версія, юзер побачить діалог і зможе оновитись.
+  updater.startUpdateCheck(mainWindow);
 });
 
 app.on('window-all-closed', () => {
   if (serverProcess) {
-    serverProcess.kill();
+    try { serverProcess.kill(); } catch {}
     serverProcess = null;
   }
   app.quit();
+});
+
+// Зловимо несподівані помилки на рівні Node (інакше Electron мовчки крашиться)
+process.on('uncaughtException', (err) => {
+  console.error('[main] uncaughtException:', err);
+  try {
+    dialog.showErrorBox('Непередбачена помилка', err.stack || err.message || String(err));
+  } catch {}
 });

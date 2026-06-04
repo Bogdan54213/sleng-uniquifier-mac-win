@@ -1,17 +1,58 @@
-name: Build
+name: Build & Release
 
+# Тригери:
+#   1. Push з тегом v*.*.* (e.g. v1.0.1) — повний реліз з GitHub Release + latest.json
+#   2. Push у main — тільки збірка (артефакти у Actions, не реліз)
+#   3. workflow_dispatch — ручний запуск з UI Actions
 on:
   push:
     branches: [main]
+    tags:     ['v*.*.*']
   workflow_dispatch:
 
 jobs:
 
+  # ── Витягуємо версію з тегу або з package.json ───────────────────────────────
+  resolve-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version:    ${{ steps.v.outputs.version }}
+      is_release: ${{ steps.v.outputs.is_release }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(node -p "require('./builds/electron/package.json').version")
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          fi
+          echo "Resolved version: ${VERSION}"
+
   # ── Windows .exe ─────────────────────────────────────────────────────────────
   build-windows:
+    needs: resolve-version
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Sync version into package.json and iss
+        shell: pwsh
+        run: |
+          $v = "${{ needs.resolve-version.outputs.version }}"
+          # package.json
+          $pkg = Get-Content builds\electron\package.json -Raw | ConvertFrom-Json
+          $pkg.version = $v
+          $pkg | ConvertTo-Json -Depth 10 | Set-Content builds\electron\package.json -Encoding utf8NoBOM
+          # setup_electron.iss
+          (Get-Content builds\electron\setup_electron.iss) `
+            -replace '#define MyAppVersion\s+".*"', "#define MyAppVersion   `"$v`"" `
+            | Set-Content builds\electron\setup_electron.iss
 
       - name: Create config.py from secrets
         shell: pwsh
@@ -56,17 +97,29 @@ jobs:
         run: builds\electron\build.bat
         shell: cmd
 
-      - name: Upload Windows installer
+      - name: Upload Windows installer (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: dist/installer/SlengUniquifier_Setup_v1.0.0.exe
+          path: dist/installer/SlengUniquifier_Setup_v${{ needs.resolve-version.outputs.version }}.exe
 
   # ── Mac .dmg ─────────────────────────────────────────────────────────────────
   build-mac:
+    needs: resolve-version
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Sync version into package.json and build_mac.sh
+        run: |
+          V="${{ needs.resolve-version.outputs.version }}"
+          # package.json
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('builds/electron/package.json'));
+            p.version = '$V';
+            fs.writeFileSync('builds/electron/package.json', JSON.stringify(p, null, 2));
+          "
 
       - name: Create config.py from secrets
         run: |
@@ -81,9 +134,9 @@ jobs:
           open("config.py", "w").write("\n".join(lines) + "\n")
           EOF
         env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          ADMIN_CHAT_ID: ${{ secrets.ADMIN_CHAT_ID }}
-          HMAC_SECRET: ${{ secrets.HMAC_SECRET }}
+          BOT_TOKEN:      ${{ secrets.BOT_TOKEN }}
+          ADMIN_CHAT_ID:  ${{ secrets.ADMIN_CHAT_ID }}
+          HMAC_SECRET:    ${{ secrets.HMAC_SECRET }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
       - name: Setup Python 3.11
@@ -105,14 +158,86 @@ jobs:
       - name: Build Mac DMG
         run: bash builds/electron/build_mac.sh
 
-      - name: Upload Mac DMG (x64)
+      - name: Upload Mac DMG x64 (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: mac-dmg-x64
-          path: dist/mac/SlengUniquifier_v1.0.0_x64.dmg
+          path: dist/mac/SlengUniquifier_v${{ needs.resolve-version.outputs.version }}_x64.dmg
 
-      - name: Upload Mac DMG (arm64)
+      - name: Upload Mac DMG arm64 (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: mac-dmg-arm64
-          path: dist/mac/SlengUniquifier_v1.0.0_arm64.dmg
+          path: dist/mac/SlengUniquifier_v${{ needs.resolve-version.outputs.version }}_arm64.dmg
+
+  # ── Створюємо GitHub Release і оновлюємо latest.json (тільки при тегу) ──────
+  release:
+    needs: [resolve-version, build-windows, build-mac]
+    if: needs.resolve-version.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # потрібно щоб робити commit з оновленим latest.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: ls -la artifacts/ && find artifacts -type f
+
+      - name: Extract release notes from tag message
+        id: notes
+        run: |
+          NOTES=$(git tag -l --format='%(contents)' "v${{ needs.resolve-version.outputs.version }}" || echo "")
+          if [ -z "$NOTES" ]; then
+            NOTES="Реліз v${{ needs.resolve-version.outputs.version }}"
+          fi
+          # Багаторядкові outputs у GitHub Actions через HEREDOC
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.resolve-version.outputs.version }}
+          name:     Sleng Уніфікатор ${{ needs.resolve-version.outputs.version }}
+          body:     ${{ steps.notes.outputs.notes }}
+          draft:    false
+          prerelease: false
+          files: |
+            artifacts/windows-installer/SlengUniquifier_Setup_v${{ needs.resolve-version.outputs.version }}.exe
+            artifacts/mac-dmg-x64/SlengUniquifier_v${{ needs.resolve-version.outputs.version }}_x64.dmg
+            artifacts/mac-dmg-arm64/SlengUniquifier_v${{ needs.resolve-version.outputs.version }}_arm64.dmg
+
+      - name: Update latest.json (Windows)
+        run: |
+          V="${{ needs.resolve-version.outputs.version }}"
+          NOTES=$(echo "${{ steps.notes.outputs.notes }}" | head -c 1000 | sed 's/"/\\"/g' | tr '\n' ' ')
+          cat > latest.json << EOF
+          {
+            "version": "$V",
+            "url":     "https://github.com/${{ github.repository }}/releases/download/v$V/SlengUniquifier_Setup_v$V.exe",
+            "notes":   "$NOTES",
+            "mac_x64":  "https://github.com/${{ github.repository }}/releases/download/v$V/SlengUniquifier_v${V}_x64.dmg",
+            "mac_arm64":"https://github.com/${{ github.repository }}/releases/download/v$V/SlengUniquifier_v${V}_arm64.dmg"
+          }
+          EOF
+          cat latest.json
+
+      - name: Commit latest.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout main
+          git pull origin main
+          git add latest.json
+          git commit -m "Release v${{ needs.resolve-version.outputs.version }}: update latest.json" || echo "nothing to commit"
+          git push origin main
