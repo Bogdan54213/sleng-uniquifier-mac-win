@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "uniquifier",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["server.py"],
+      "port": 7474
+    }
+  ]
+}

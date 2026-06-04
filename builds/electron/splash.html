@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Sleng Унікалізатор</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  /* Сам splash — заокруглена «картка» з градієнтом + м'якою тінню */
+  .splash {
+    width: 100%; height: 100%;
+    background:
+      radial-gradient(circle at 30% 25%, rgba(255,138,0,.18), transparent 60%),
+      radial-gradient(circle at 70% 80%, rgba(255,200,10,.12), transparent 65%),
+      #0a0a0a;
+    border-radius: 14px;
+    border: 1px solid rgba(255,138,0,.18);
+    box-shadow:
+      0 18px 50px rgba(0,0,0,.65),
+      inset 0 1px 0 rgba(255,180,40,.08);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px;
+    font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, sans-serif;
+    -webkit-app-region: drag; /* перетягувати splash як native window */
+  }
+
+  /* Логотип — той самий що в main UI */
+  .logo {
+    filter: drop-shadow(0 6px 20px rgba(255,138,0,.42))
+            drop-shadow(0 0 40px rgba(255,138,0,.18));
+    animation: float 2.6s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+  }
+
+  .title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,.92);
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    margin-top: 2px;
+  }
+
+  /* Лоадер: 3 точки що пульсують */
+  .loader { display: flex; gap: 5px; align-items: center; }
+  .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd60a, #ff7a00);
+    box-shadow: 0 0 8px rgba(255,138,0,.6);
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .dot:nth-child(2) { animation-delay: .15s; }
+  .dot:nth-child(3) { animation-delay: .30s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(.85); opacity: .55; }
+    40%           { transform: scale(1.15); opacity: 1; }
+  }
+
+  .hint {
+    font-size: 11px;
+    color: rgba(255,255,255,.32);
+    letter-spacing: .04em;
+    margin-top: -2px;
+  }
+</style>
+</head>
+<body>
+<div class="splash">
+  <!-- Логотип-плеєр (точно як у main UI) -->
+  <svg class="logo" viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="splashBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%"   stop-color="#ffd60a"/>
+        <stop offset="60%"  stop-color="#ff7a00"/>
+        <stop offset="100%" stop-color="#cc4400"/>
+      </linearGradient>
+    </defs>
+    <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#splashBrandGrad)"/>
+    <rect x="4" y="4" width="56" height="56" rx="14" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="1"/>
+    <path d="M26 20 L46 32 L26 44 Z" fill="#0a0a0a" stroke="#0a0a0a" stroke-width=".5" stroke-linejoin="round"/>
+    <circle cx="50" cy="14" r="4" fill="#ffd60a" stroke="#0a0a0a" stroke-width="1.5"/>
+  </svg>
+
+  <div class="title">Sleng Унікалізатор</div>
+
+  <div class="loader">
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+  </div>
+
+  <div class="hint">Запуск...</div>
+</div>
+</body>
+</html>

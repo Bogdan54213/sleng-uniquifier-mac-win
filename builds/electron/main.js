@@ -197,10 +197,20 @@ async function createWindow() {
   // Прибираємо menubar повністю — професійний нативний look без зайвого File/Edit/View
   Menu.setApplicationMenu(null);
 
-  // Хоткеї: F11 = fullscreen toggle, Ctrl+0/+/- = zoom
+  // Хоткеї:
+  //   F11           — fullscreen toggle
+  //   Ctrl+Shift+I  — Chromium DevTools (для діагностики при проблемах)
+  //   Ctrl+R / F5   — reload
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'F11' && input.type === 'keyDown') {
+    if (input.type !== 'keyDown') return;
+    if (input.key === 'F11') {
       mainWindow.setFullScreen(!mainWindow.isFullScreen());
+      event.preventDefault();
+    } else if (input.control && input.shift && input.key.toUpperCase() === 'I') {
+      mainWindow.webContents.toggleDevTools();
+      event.preventDefault();
+    } else if ((input.control && input.key.toUpperCase() === 'R') || input.key === 'F5') {
+      mainWindow.webContents.reload();
       event.preventDefault();
     }
   });
@@ -213,16 +223,64 @@ async function createWindow() {
     if (!url.startsWith(`http://127.0.0.1:${PORT}`)) e.preventDefault();
   });
 
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  // Коли main готова — спершу закриваємо splash, потім показуємо main.
+  // Таким чином немає миті коли видно обидва вікна (або жодного).
+  mainWindow.once('ready-to-show', () => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      try { splashWindow.close(); } catch {}
+      splashWindow = null;
+    }
+    mainWindow.show();
+  });
 
   await mainWindow.loadURL(`http://127.0.0.1:${PORT}`);
 }
 
+// ── Splash window (показуємо одразу, поки server.exe розпаковує _MEI) ──────
+let splashWindow = null;
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width:           360,
+    height:          240,
+    frame:           false,
+    transparent:     true,
+    resizable:       false,
+    movable:         true,
+    skipTaskbar:     false,
+    alwaysOnTop:     false,
+    center:          true,
+    hasShadow:       true,
+    backgroundColor: '#00000000',
+    title:           'Sleng Унікалізатор',
+    show:            false,
+    webPreferences: {
+      nodeIntegration:  false,
+      contextIsolation: true,
+    },
+  });
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+  splashWindow.once('ready-to-show', () => {
+    if (splashWindow && !splashWindow.isDestroyed()) splashWindow.show();
+  });
+  splashWindow.on('closed', () => { splashWindow = null; });
+}
+
+function closeSplash() {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    try { splashWindow.close(); } catch {}
+  }
+  splashWindow = null;
+}
+
 // ── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
+  // 1) ПЕРШЕ — splash, миттєво. Юзер не бачить голого чорного flash'a.
+  createSplashWindow();
+
   try {
     startServer();
   } catch (e) {
+    closeSplash();
     showDiagnosticDialog(e);
     app.quit();
     return;
@@ -232,15 +290,17 @@ app.whenReady().then(async () => {
     await waitForPort(PORT);
   } catch (e) {
     console.error('[main] waitForPort failed:', e);
+    closeSplash();
     showDiagnosticDialog(e);
     app.quit();
     return;
   }
 
+  // 2) Створюємо main вікно (приховане). У ready-to-show callback'у
+  //    автоматично закриється splash і покажеться main — плавно.
   await createWindow();
 
   // Auto-update — перевіряємо через 10 сек після старту.
-  // Якщо є нова версія, юзер побачить діалог і зможе оновитись.
   updater.startUpdateCheck(mainWindow);
 });
 

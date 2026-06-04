@@ -6,19 +6,12 @@
 <title>Sleng Унікалізатор</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
-   Бренд-шрифти. Орбітрон — для логотипу/заголовків (digital, cyber вайб).
-   Cascadia Code — для коду/Machine ID (modern mono від MS).
-   Файли лежать у fonts/ і сервяться через server.py route /fonts/<name>.
-   У dev-mode (відкритий через file://) шляхи теж relative — все ОК.
+   Бренд-шрифти.
+   ▸ Заголовки — system sans (Segoe UI / SF Pro) з uppercase + letter-spacing.
+     Це дає «digital»-вайб БЕЗ Latin-only-кошмарів типу Orbitron
+     (який не має кирилиці і ламає весь текст).
+   ▸ Cascadia Code — для Machine ID / коду активації (має повну кирилицю + ліг'и).
    ═══════════════════════════════════════════════════════════════════════════ */
-@font-face {
-  font-family: 'Orbitron';
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-  src: url('/fonts/Orbitron-Bold.ttf') format('truetype'),
-       url('fonts/Orbitron-Bold.ttf') format('truetype');
-}
 @font-face {
   font-family: 'Cascadia Code';
   font-weight: 400;
@@ -32,21 +25,19 @@
 html { height: 100%; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
-    'Inter', 'Segoe UI Variable', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont,
+    'SF Pro Text', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #0a0a0a;
-  /* min-height: 100vh замість 100% — щоб коректно центрувалось у resizable вікні */
+  /* flex-start щоб контент НЕ обрізався зверху коли вище за viewport */
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 20px;
+  padding: 24px 16px;
   position: relative;
   overflow-x: hidden;
-  /* у resizable режимі дозволяємо вертикальний scroll коли висота < content */
-  overflow-y: auto;
 }
 
 /* ── Background ── */
@@ -582,68 +573,20 @@ body { background: var(--brand-bg); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    БРЕНД-ШРИФТИ — застосування
+   ▸ Заголовки: system sans (Segoe UI/SF Pro) + uppercase + tracking → digital вайб
+   ▸ Mono: Cascadia Code (повна кирилиця, лігатури)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Логотип/заголовки — Orbitron (digital, cyber вайб) */
-.hdr-title {
-  font-family: 'Orbitron', -apple-system, BlinkMacSystemFont, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  font-weight: 700;
-  font-size: 22px;
-}
-
-/* Authentication hero — теж Orbitron для consistency */
-.auth-hero-title {
-  font-family: 'Orbitron', -apple-system, BlinkMacSystemFont, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  font-weight: 700;
-  font-size: 16px;
-}
-
-/* Sec-label (uppercase labels типу "ПРЕСЕТ") — Orbitron для tech feel */
-.sec-label {
-  font-family: 'Orbitron', -apple-system, sans-serif;
-  letter-spacing: .12em;
-  font-weight: 700;
-}
-
-/* Кнопка-primary з brand-feel */
-.btn-go {
-  font-family: 'Orbitron', -apple-system, BlinkMacSystemFont, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  font-weight: 700;
-  font-size: 13.5px;
-}
-/* Telegram-кнопка має «нормальний» текст — secondary йде у regular sans */
-#btnRegister {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-  font-weight: 500 !important;
-  font-size: 14px !important;
-}
-
-/* Mono — для Machine ID, кодів, технічних даних */
+/* Mono — для Machine ID, кодів активації, технічних даних */
 .machine-id,
 #activationCode,
 .sc-v.mono,
 .sc-v.green {
   font-family: 'Cascadia Code', 'SF Mono', 'Menlo', 'Consolas', monospace !important;
-  font-feature-settings: 'calt' 1, 'ss01' 1;  /* лігатури */
+  font-feature-settings: 'calt' 1, 'ss01' 1;
 }
 .machine-id { letter-spacing: .06em; font-size: 15px; }
 #activationCode { letter-spacing: .12em; font-size: 16px; text-align: center; }
-
-/* Preset name (Stealth/Light/Medium/Hard) — Orbitron uppercase */
-.pname {
-  font-family: 'Orbitron', -apple-system, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  font-weight: 700;
-}
 </style>
 </head>
 <body>
@@ -1169,14 +1112,18 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Запасний тригер: 5 кліків на іконку 🎬
+// Запасний тригер: 5 кліків на лого (раніше було .hdr-icon, тепер .hdr-logo)
+// null-safe — щоб одна відсутня DOM-нода ніколи не ламала весь скрипт нижче.
 let _iconClicks = 0, _iconTimer = null;
-document.querySelector('.hdr-icon').addEventListener('click', () => {
-  _iconClicks++;
-  clearTimeout(_iconTimer);
-  _iconTimer = setTimeout(() => { _iconClicks = 0; }, 2000);
-  if (_iconClicks >= 5) { _iconClicks = 0; openAdminOverlay(); }
-});
+const _logoEl = document.querySelector('.hdr-logo, .hdr-icon');
+if (_logoEl) {
+  _logoEl.addEventListener('click', () => {
+    _iconClicks++;
+    clearTimeout(_iconTimer);
+    _iconTimer = setTimeout(() => { _iconClicks = 0; }, 2000);
+    if (_iconClicks >= 5) { _iconClicks = 0; openAdminOverlay(); }
+  });
+}
 
 function openAdminOverlay() {
   adminOverlay.classList.remove('off');
