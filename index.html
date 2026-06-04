@@ -13,7 +13,7 @@ body {
     'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #0a1628;
+  background: #0a0a0a;
   min-height: 100%;
   display: flex;
   align-items: center;
@@ -24,19 +24,19 @@ body {
 }
 
 /* ── Background ── */
-.bg { position: fixed; inset: 0; z-index: 0; background: #0a1628; overflow: hidden; }
+.bg { position: fixed; inset: 0; z-index: 0; background: #0a0a0a; overflow: hidden; }
 .blob { position: absolute; border-radius: 50%; filter: blur(110px); will-change: transform; pointer-events: none; }
 .b1 { width: 75vw; height: 75vw; top: -25%; left: -15%;
-  background: radial-gradient(circle, rgba(28,38,130,.65) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,138,0,.22) 0%, transparent 70%);
   animation: b1 85s ease-in-out infinite; }
 .b2 { width: 55vw; height: 55vw; bottom: -20%; right: -10%;
-  background: radial-gradient(circle, rgba(18,70,140,.55) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,90,0,.18) 0%, transparent 70%);
   animation: b2 95s ease-in-out infinite; }
 .b3 { width: 45vw; height: 45vw; top: 35%; left: 45%;
-  background: radial-gradient(circle, rgba(55,18,100,.38) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,200,10,.12) 0%, transparent 70%);
   animation: b3 72s ease-in-out infinite; }
 .b4 { width: 38vw; height: 38vw; top: 5%; right: 15%;
-  background: radial-gradient(circle, rgba(10,55,90,.42) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(120,40,0,.28) 0%, transparent 70%);
   animation: b4 105s ease-in-out infinite; }
 @keyframes b1 { 0%,100%{transform:translate(0,0)scale(1)} 25%{transform:translate(8%,18%)scale(1.04)} 50%{transform:translate(3%,32%)scale(.96)} 75%{transform:translate(14%,8%)scale(1.02)} }
 @keyframes b2 { 0%,100%{transform:translate(0,0)scale(1)} 33%{transform:translate(-12%,-8%)scale(1.07)} 66%{transform:translate(-4%,16%)scale(.94)} }
@@ -78,7 +78,7 @@ body {
 /* ── Header ── */
 .hdr { text-align: center; margin-bottom: 28px; }
 .hdr-icon { font-size: 46px; display: block; margin-bottom: 14px; line-height: 1;
-  filter: drop-shadow(0 0 18px rgba(100,180,255,.4)) drop-shadow(0 0 40px rgba(100,180,255,.15)); }
+  filter: drop-shadow(0 0 18px rgba(255,138,0,.4)) drop-shadow(0 0 40px rgba(255,138,0,.15)); }
 .hdr-title { font-size: 28px; font-weight: 600; color: rgba(255,255,255,.92);
   letter-spacing: -.025em; margin-bottom: 7px; line-height: 1.15; }
 .hdr-sub { font-size: 14px; color: rgba(255,255,255,.36); line-height: 1.5; }
@@ -97,9 +97,9 @@ body {
   background: rgba(255,255,255,.015); padding: 36px 24px 28px;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
   cursor: pointer; transition: all .3s ease; text-align: center; }
-.dz:hover { border-color: rgba(100,180,255,.28); background: rgba(100,180,255,.025); }
-.dz.over { border-style: solid; border-color: rgba(100,180,255,.52);
-  background: rgba(100,180,255,.055); transform: scale(1.012); }
+.dz:hover { border-color: rgba(255,138,0,.28); background: rgba(255,138,0,.025); }
+.dz.over { border-style: solid; border-color: rgba(255,138,0,.52);
+  background: rgba(255,138,0,.055); transform: scale(1.012); }
 .dz-icon { width: 44px; height: 44px; color: rgba(255,255,255,.28); margin-bottom: 2px; }
 .dz-main { font-size: 16px; color: rgba(255,255,255,.5); }
 .dz-or   { font-size: 13px; color: rgba(255,255,255,.24); }
@@ -138,13 +138,13 @@ body {
   border-radius: 14px; padding: 14px 8px; text-align: center; cursor: pointer;
   transition: all .2s ease; font-family: inherit; -webkit-font-smoothing: antialiased; }
 .pbtn:hover:not(.on) { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.1); }
-.pbtn.on { background: rgba(100,180,255,.1); border-color: rgba(100,180,255,.26);
-  box-shadow: 0 0 22px rgba(100,180,255,.1); }
+.pbtn.on { background: rgba(255,138,0,.1); border-color: rgba(255,138,0,.26);
+  box-shadow: 0 0 22px rgba(255,138,0,.1); }
 .pname { display: block; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.58);
   margin-bottom: 5px; letter-spacing: -.01em; }
-.pbtn.on .pname { color: rgba(100,180,255,.92); }
+.pbtn.on .pname { color: rgba(255,138,0,.92); }
 .pdesc { display: block; font-size: 11px; color: rgba(255,255,255,.27); line-height: 1.4; }
-.pbtn.on .pdesc { color: rgba(100,180,255,.5); }
+.pbtn.on .pdesc { color: rgba(255,138,0,.5); }
 
 /* ── Advanced Options ── */
 .adv-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer;
@@ -164,7 +164,7 @@ body {
 .tgl { width: 44px; height: 24px; background: rgba(255,255,255,.1); border-radius: 12px;
   position: relative; cursor: pointer; flex-shrink: 0;
   transition: background .3s cubic-bezier(.4,0,.2,1); }
-.tgl.on { background: rgba(100,180,255,.65); }
+.tgl.on { background: rgba(255,138,0,.65); }
 .tgl-dot { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
   background: white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,.35);
   transition: transform .3s cubic-bezier(.4,0,.2,1); }
@@ -172,14 +172,14 @@ body {
 
 /* ── Primary Button ── */
 .btn-go { width: 100%; height: 52px;
-  background: linear-gradient(135deg, rgba(100,180,255,.72), rgba(75,140,255,.72));
-  backdrop-filter: blur(10px); border: 1px solid rgba(100,180,255,.32);
+  background: linear-gradient(135deg, rgba(255,138,0,.72), rgba(255,200,10,.72));
+  backdrop-filter: blur(10px); border: 1px solid rgba(255,138,0,.32);
   border-radius: 16px; font-size: 16px; font-weight: 600;
   color: rgba(255,255,255,.96); cursor: pointer; transition: all .2s ease;
-  box-shadow: 0 4px 24px rgba(100,180,255,.2); font-family: inherit;
+  box-shadow: 0 4px 24px rgba(255,138,0,.2); font-family: inherit;
   -webkit-font-smoothing: antialiased; letter-spacing: -.015em; margin-top: 4px; }
 .btn-go:hover:not(:disabled) { filter: brightness(1.12);
-  box-shadow: 0 8px 32px rgba(100,180,255,.32); transform: translateY(-1px); }
+  box-shadow: 0 8px 32px rgba(255,138,0,.32); transform: translateY(-1px); }
 .btn-go:active:not(:disabled) { transform: scale(.98); filter: brightness(.95); }
 .btn-go:disabled { opacity: .22; cursor: not-allowed; box-shadow: none; }
 
@@ -188,16 +188,16 @@ body {
   border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
 .prog-row { display: flex; justify-content: space-between; align-items: center; }
 .prog-lbl { font-size: 15px; color: rgba(255,255,255,.7); }
-.prog-pct { font-size: 15px; font-weight: 600; color: rgba(100,180,255,.92);
+.prog-pct { font-size: 15px; font-weight: 600; color: rgba(255,138,0,.92);
   font-variant-numeric: tabular-nums; letter-spacing: -.01em; min-width: 40px; text-align: right; }
 .prog-track { height: 4px; background: rgba(255,255,255,.06); border-radius: 2px;
   overflow: visible; position: relative; }
 .prog-fill { height: 100%;
-  background: linear-gradient(90deg, rgba(100,180,255,.72), rgba(150,215,255,.85));
+  background: linear-gradient(90deg, rgba(255,138,0,.72), rgba(150,215,255,.85));
   border-radius: 2px; width: 0%; transition: width .25s ease; position: relative; }
 .prog-fill::after { content: ''; position: absolute; right: -5px; top: -4px;
   width: 12px; height: 12px; border-radius: 50%; background: rgba(160,220,255,.95);
-  box-shadow: 0 0 14px rgba(100,180,255,.7); }
+  box-shadow: 0 0 14px rgba(255,138,0,.7); }
 .prog-fill.done::after { display: none; }
 .prog-stage { font-size: 13px; color: rgba(255,255,255,.3); min-height: 18px; }
 .btn-cancel { background: none; border: none; font-size: 13px; color: rgba(255,255,255,.27);
@@ -282,7 +282,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 .auth-input::placeholder { color: rgba(255,255,255,.28); }
-.auth-input:focus { border-color: rgba(100,180,255,.4); background: rgba(255,255,255,.07); }
+.auth-input:focus { border-color: rgba(255,138,0,.4); background: rgba(255,255,255,.07); }
 .auth-input.err { border-color: rgba(255,69,58,.45); }
 
 .auth-err { background: rgba(255,69,58,.07); border: 1px solid rgba(255,69,58,.18);
@@ -291,8 +291,8 @@ body {
 .auth-err.show { display: block; animation: fadeUp .3s ease-out; }
 
 .auth-hint { font-size: 13px; color: rgba(255,255,255,.3); text-align: center; line-height: 1.6; }
-.auth-hint a { color: rgba(100,180,255,.6); cursor: pointer; text-decoration: none; }
-.auth-hint a:hover { color: rgba(100,180,255,.9); }
+.auth-hint a { color: rgba(255,138,0,.6); cursor: pointer; text-decoration: none; }
+.auth-hint a:hover { color: rgba(255,138,0,.9); }
 
 .machine-box {
   background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
@@ -346,11 +346,11 @@ body {
 .admin-section { display: flex; flex-direction: column; gap: 12px; }
 .admin-section-title { font-size: 11px; font-weight: 600; letter-spacing: .07em;
   text-transform: uppercase; color: rgba(255,255,255,.28); }
-.code-result { background: rgba(100,180,255,.08); border: 1px solid rgba(100,180,255,.2);
+.code-result { background: rgba(255,138,0,.08); border: 1px solid rgba(255,138,0,.2);
   border-radius: 12px; padding: 14px 16px;
   display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .code-value { font-size: 20px; font-weight: 600; letter-spacing: .12em;
-  color: rgba(100,180,255,.95); font-family: 'SF Mono','Menlo','Courier New',monospace; }
+  color: rgba(255,138,0,.95); font-family: 'SF Mono','Menlo','Courier New',monospace; }
 .admin-sep { height: 1px; background: rgba(255,255,255,.06); margin: 4px 0; }
 
 .btn-sm {
@@ -359,9 +359,9 @@ body {
   -webkit-font-smoothing: antialiased; letter-spacing: -.01em; border: none;
 }
 .btn-sm-blue {
-  background: linear-gradient(135deg, rgba(100,180,255,.7), rgba(75,140,255,.7));
-  border: 1px solid rgba(100,180,255,.3); color: rgba(255,255,255,.95);
-  box-shadow: 0 3px 14px rgba(100,180,255,.18);
+  background: linear-gradient(135deg, rgba(255,138,0,.7), rgba(255,200,10,.7));
+  border: 1px solid rgba(255,138,0,.3); color: rgba(255,255,255,.95);
+  box-shadow: 0 3px 14px rgba(255,138,0,.18);
 }
 .btn-sm-blue:hover { filter: brightness(1.12); transform: translateY(-1px); }
 .btn-sm-green {
@@ -375,6 +375,158 @@ body {
 .pending-icon { font-size: 48px; display: block; text-align: center; margin-bottom: 4px;
   animation: pulse 2.4s ease-in-out infinite; }
 @keyframes pulse { 0%,100%{opacity:.7;transform:scale(1)} 50%{opacity:1;transform:scale(1.06)} }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRAFFIC SLENG BRAND — финальні override'и (чорний / оранжевий / жовтий)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --brand-bg:       #0a0a0a;
+  --brand-card:     rgba(255,255,255,.03);
+  --brand-border:   rgba(255,255,255,.07);
+  --brand-orange:   #ff7a00;
+  --brand-amber:    #ffb020;
+  --brand-yellow:   #ffd60a;
+  --brand-text:     rgba(255,255,255,.92);
+  --brand-mute:     rgba(255,255,255,.45);
+}
+
+body { background: var(--brand-bg); }
+.bg  { background: var(--brand-bg); }
+
+/* ── Panel: чіткіша рамка з натяком на бренд ── */
+.panel {
+  background: rgba(20,18,15,.55);
+  border: 1px solid rgba(255,138,0,.10);
+  box-shadow:
+    0 8px 50px rgba(0,0,0,.6),
+    0 2px 12px rgba(0,0,0,.4),
+    inset 0 1px 0 rgba(255,180,40,.06);
+}
+.panel::after {
+  background: radial-gradient(ellipse at 22% 0%, rgba(255,180,40,.06) 0%, transparent 65%);
+}
+
+/* ── Заголовок з акцентом ── */
+.hdr-title {
+  background: linear-gradient(135deg, var(--brand-yellow), var(--brand-orange));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+
+/* ── Primary button: фірмовий оранжево-жовтий градієнт ── */
+.btn-go {
+  background: linear-gradient(135deg, #ff7a00 0%, #ffb020 100%) !important;
+  border: 1px solid rgba(255,138,0,.45);
+  color: #0a0a0a !important;
+  font-weight: 700;
+  box-shadow:
+    0 4px 22px rgba(255,138,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.25);
+}
+.btn-go:hover:not(:disabled) {
+  filter: brightness(1.08) saturate(1.1);
+  box-shadow: 0 8px 30px rgba(255,138,0,.45);
+}
+
+/* Secondary button (Register fallback) — приглушений */
+#btnRegister {
+  background: rgba(255,255,255,.05) !important;
+  color: rgba(255,255,255,.55) !important;
+  border-color: rgba(255,255,255,.08) !important;
+  box-shadow: none !important;
+}
+#btnRegister:hover:not(:disabled) {
+  background: rgba(255,255,255,.08) !important;
+  color: rgba(255,255,255,.75) !important;
+  box-shadow: none !important;
+}
+
+/* ── Preset cards: вибраний — теплий оранжевий ── */
+.pbtn {
+  border-radius: 12px;
+}
+.pbtn.on {
+  background: linear-gradient(135deg, rgba(255,138,0,.16), rgba(255,200,10,.10));
+  border-color: rgba(255,138,0,.45);
+  box-shadow: 0 0 18px rgba(255,138,0,.18), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.pbtn.on .pname { color: var(--brand-amber); }
+.pbtn.on .pdesc { color: rgba(255,180,80,.62); }
+
+/* ── Drop zone hover/active ── */
+.dz {
+  border-color: rgba(255,138,0,.18);
+}
+.dz.active {
+  border-color: var(--brand-orange) !important;
+  background: rgba(255,138,0,.06) !important;
+  box-shadow: 0 0 30px rgba(255,138,0,.18), inset 0 0 30px rgba(255,138,0,.06);
+}
+
+/* ── Toggle: жовтий active state ── */
+.tgl.on {
+  background: linear-gradient(90deg, var(--brand-orange), var(--brand-amber));
+}
+
+/* ── Progress: оранжево-жовтий gradient ── */
+.prog-fill {
+  background: linear-gradient(90deg, var(--brand-orange), var(--brand-yellow));
+}
+.prog-fill::after {
+  background: var(--brand-yellow);
+  box-shadow: 0 0 14px rgba(255,200,10,.7);
+}
+.prog-pct { color: var(--brand-amber); }
+
+/* ── Auth-екран ── */
+.auth-input:focus {
+  border-color: rgba(255,138,0,.45);
+  background: rgba(255,138,0,.04);
+  box-shadow: 0 0 0 3px rgba(255,138,0,.10);
+}
+.auth-hint a {
+  color: var(--brand-yellow);
+}
+.auth-hint a:hover {
+  color: var(--brand-orange);
+}
+
+/* ── Machine ID box ── */
+.machine-box {
+  background: linear-gradient(135deg, rgba(255,138,0,.06), rgba(255,200,10,.03));
+  border-color: rgba(255,138,0,.18);
+}
+.machine-id { color: var(--brand-amber); letter-spacing: .08em; }
+
+/* ── Header icon (велике емодзі) — обрамити фірмовим glow ── */
+.hdr-icon {
+  filter: drop-shadow(0 0 20px rgba(255,138,0,.35));
+}
+
+/* ── Заокруглення трохи менші — більш «технічно» ── */
+.panel       { border-radius: 18px; }
+.btn-go      { border-radius: 12px; }
+.auth-input  { border-radius: 10px; }
+.machine-box { border-radius: 12px; }
+.pbtn        { border-radius: 10px; }
+
+/* ── Telegram-кнопка (Quick Login) — окремий стиль з логотипом Telegram ── */
+#btnQuickLogin {
+  background: linear-gradient(135deg, var(--brand-orange) 0%, var(--brand-yellow) 100%) !important;
+  position: relative;
+  letter-spacing: -.005em;
+}
+
+/* ── Subtler scrollbar для inner sections ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(255,138,0,.18); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,138,0,.32); }
+::-webkit-scrollbar-track { background: transparent; }
 </style>
 </head>
 <body>
@@ -405,7 +557,7 @@ body {
         </div>
 
         <!-- Швидкий вхід через Telegram (1 клік) -->
-        <button class="btn-go" id="btnQuickLogin" style="background:linear-gradient(90deg,#229ED9,#1c8bc0);">
+        <button class="btn-go" id="btnQuickLogin">
           🔑 Увійти через Telegram
         </button>
         <p class="auth-hint" style="margin-top:8px;line-height:1.5;">
