@@ -17,6 +17,8 @@ a = Analysis(
         (str(ROOT / 'auth.py'),       '.'),
         (str(ROOT / 'bot_notify.py'), '.'),
         (str(ROOT / 'config.py'),     '.'),
+        # Шрифти бренд-стилю — Orbitron (logo) + CascadiaCode (mono)
+        (str(ROOT / 'fonts'),         'fonts'),
     ],
     hiddenimports=[
         'server',

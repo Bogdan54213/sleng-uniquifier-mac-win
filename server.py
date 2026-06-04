@@ -69,12 +69,34 @@ class Handler(BaseHTTPRequestHandler):
             self._file(BASE_DIR / 'index.html', 'text/html; charset=utf-8')
         elif p == '/api/auth/status':
             self._auth_status()
+        elif p.startswith('/fonts/'):
+            self._font(p[7:])
         elif p.startswith('/events/'):
             self._sse_stream(p[8:])
         elif p.startswith('/download/'):
             self._download(p[10:])
         else:
             self.send_error(404)
+
+    # ── Шрифти ────────────────────────────────────────────────────────────────
+
+    def _font(self, name: str):
+        """Сервує .ttf/.otf файли з папки fonts/ поряд з index.html.
+
+        Безпека: дозволяємо тільки прості імена (без / .. \\), щоб не
+        дати доступу до інших файлів через path traversal.
+        """
+        from pathlib import Path as _P
+        safe = _P(name).name  # відкидає будь-які / або \
+        if not safe or not (safe.endswith('.ttf') or safe.endswith('.otf')):
+            self.send_error(404)
+            return
+        font_path = BASE_DIR / 'fonts' / safe
+        if not font_path.exists():
+            self.send_error(404)
+            return
+        ct = 'font/ttf' if safe.endswith('.ttf') else 'font/otf'
+        self._file(font_path, ct)
 
     def do_POST(self):
         p = urlparse(self.path).path
