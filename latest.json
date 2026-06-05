@@ -1,7 +1,7 @@
 {
-  "version": "1.0.16",
-  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.16/SlengUniquifier_Setup_v1.0.16.exe",
-  "notes":   "v1.0.16: чисті заокруглені кути іконки (фікс чорних артефактів від Windows shell)  Раніше icon.ico був квадратним PNG → Windows 11 застосовував свою rounded-mask і клипав куточки до фону робочого стола. На темних шпалерах виглядало як 'жовтий логотип у чорній рамці'.  Тепер generate_icon.py застосовує власну rounded-corner alpha-маску (radius = 18% від ширини, Apple-style squircle) ПЕРЕД генерацією ICO. Куточки ICO прозорі → жовтий заокруглений квадрат проступає сам по собі, без артефактів незалежно від теми / шпалер / рендера shell.  icon.png лишається без змін (square yellow) — використовується для splash screen, де фон кон",
-  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.16/SlengUniquifier_v1.0.16_x64.dmg",
-  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.16/SlengUniquifier_v1.0.16_arm64.dmg"
+  "version": "1.0.17",
+  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.17/SlengUniquifier_Setup_v1.0.17.exe",
+  "notes":   "v1.0.17: топбар на одній лінії + лого без обведення + ─/✕ зливаються з фоном  Три фікси топбару:  1. Кнопки керування вікном (─ ✕) — змінив titleBarOverlay.color    з '#1d1d22' (помилкове сіре) на '#18181B' (точне --bg-panel з HTML).    Тепер native Windows controls зливаються з топбаром без 'квадратів'.  2. Лого більше не обведений темною заокругленою рамкою.    Прибрав з .brand-logo div: background:#050505, border:rgba(yellow),    inset shadow. Заокруглення тепер прямо на самому <img> через    border-radius — Windows shell не показує 'квадрат у квадраті'.  3. Всі елементи топбару — на одній baseline (height: 26px):    - .brand-logo: 26×26    - .app-status-pill: 26 (замість paddin",
+  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.17/SlengUniquifier_v1.0.17_x64.dmg",
+  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.17/SlengUniquifier_v1.0.17_arm64.dmg"
 }
