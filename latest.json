@@ -1,7 +1,7 @@
 {
-  "version": "1.0.10",
-  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.10/SlengUniquifier_Setup_v1.0.10.exe",
-  "notes":   "v1.0.10: ВИПРАВЛЕНО ffmpeg/ffprobe — завантажуємо справжні бінарники з BtbN замість chocolatey shim  КРИТИЧНИЙ FIX:  ставить shim (~400KB) у C:\ProgramData\chocolatey\binякий внутрішньо шукає реальний файл за відносним шляхом ..\lib\ffmpeg\tools\ffmpeg\binЦей шлях не існує у юзера → ffmpeg падає → 'Не вдалося прочитати відео файл'.  Тепер CI завантажує справжні win64-gpl бінарники з https://github.com/BtbN/FFmpeg-Builds + перевірка що файл > 50 MB (захист від випадкового регресу до shim'у) ",
-  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.10/SlengUniquifier_v1.0.10_x64.dmg",
-  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.10/SlengUniquifier_v1.0.10_arm64.dmg"
+  "version": "1.0.11",
+  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.11/SlengUniquifier_Setup_v1.0.11.exe",
+  "notes":   "Fix Electron server startup ",
+  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.11/SlengUniquifier_v1.0.11_x64.dmg",
+  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.11/SlengUniquifier_v1.0.11_arm64.dmg"
 }
