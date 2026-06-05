@@ -121,6 +121,67 @@ function waitForPort(port, timeoutMs = 25000) {
   });
 }
 
+// ── Самозцілення: вбиваємо зомбі-server.exe на порту 7474 ────────────────────
+//
+// Корінь проблеми: коли Electron крашиться / закривається через Task Manager,
+// дочірній server.exe не отримує SIGTERM і продовжує жити. Наступний запуск
+// Sleng не може забіндитись на 7474 → юзер бачить "Port already in use".
+//
+// Замість того щоб питати юзера руками вбити процес — робимо це самі.
+// Безпечно: вбиваємо ТІЛЬКИ якщо процес називається 'server.exe' (наш бекенд).
+// Не чіпаємо інші процеси які випадково можуть сидіти на 7474.
+async function killZombieOnPort(port) {
+  return new Promise((resolve) => {
+    const { exec } = require('child_process');
+    exec(`netstat -ano | findstr :${port}`, (err, stdout) => {
+      if (err || !stdout) return resolve(false);  // нікого нема — OK
+
+      // Парсимо PIDs у стані LISTENING. Кожен рядок типу:
+      //   TCP    127.0.0.1:7474   0.0.0.0:0   LISTENING   23328
+      const pids = new Set();
+      for (const line of stdout.split(/\r?\n/)) {
+        const m = line.match(/LISTENING\s+(\d+)\s*$/);
+        if (m) pids.add(m[1]);
+      }
+      if (!pids.size) return resolve(false);
+
+      // Для кожного PID перевіряємо ім'я процесу — якщо server.exe → kill
+      let pending = pids.size;
+      let killed = false;
+      pids.forEach((pid) => {
+        exec(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, (e, out) => {
+          if (!e && out && /^"server\.exe"/i.test(out.trim())) {
+            console.log(`[main] killing zombie server.exe PID=${pid}`);
+            exec(`taskkill /F /PID ${pid}`, () => {
+              killed = true;
+              if (--pending === 0) resolve(killed);
+            });
+          } else {
+            if (--pending === 0) resolve(killed);
+          }
+        });
+      });
+    });
+  });
+}
+
+// Чекаємо доки порт справді звільниться після kill (TimeWait race).
+async function waitForPortFree(port, maxMs = 3000) {
+  const net = require('net');
+  const start = Date.now();
+  while (Date.now() - start < maxMs) {
+    const free = await new Promise((resolve) => {
+      const s = net.createServer();
+      s.once('error', () => resolve(false));
+      s.once('listening', () => s.close(() => resolve(true)));
+      s.listen(port, '127.0.0.1');
+    });
+    if (free) return true;
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  return false;
+}
+
 // ── Старт Python-сервера ─────────────────────────────────────────────────────
 function startServer() {
   const exePath = serverExePath();
@@ -398,6 +459,19 @@ function closeSplash() {
 app.whenReady().then(async () => {
   // 1) ПЕРШЕ — splash, миттєво. Юзер не бачить голого чорного flash'a.
   createSplashWindow();
+
+  // 1.5) Самозцілення: якщо від попереднього запуску живий зомбі-server.exe
+  // на нашому порту — вбиваємо. Інакше startServer запустить новий процес
+  // який одразу впаде з "Port already in use".
+  try {
+    const killed = await killZombieOnPort(PORT);
+    if (killed) {
+      console.log('[main] zombie server.exe killed, waiting for port to free');
+      await waitForPortFree(PORT, 3000);
+    }
+  } catch (e) {
+    console.warn('[main] killZombieOnPort failed (non-fatal):', e.message);
+  }
 
   try {
     startServer();
