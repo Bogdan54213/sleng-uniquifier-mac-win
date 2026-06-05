@@ -520,8 +520,11 @@ def main():
     print(f'  🌐  {url}')
     print(f'  ⌨️   Зупинити: Ctrl+C\n')
 
-    # Відкриваємо браузер через 0.8 секунди
-    threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+    # Відкриваємо браузер через 0.8 секунди — тільки при ручному запуску.
+    # Electron-збірка стартує цей сервер з SLENG_NO_BROWSER=1, бо вона сама
+    # відкриває локальну адресу всередині свого BrowserWindow.
+    if os.environ.get('SLENG_NO_BROWSER') != '1':
+        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
 
     srv = Server((HOST, PORT), Handler)
     try:

@@ -67,6 +67,9 @@ function startServer() {
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: false,
     windowsHide: true,
+    // SLENG_NO_BROWSER=1 — server.py не відкриває браузер на старті,
+    // бо Electron сам показує UI всередині BrowserWindow.
+    env: { ...process.env, SLENG_NO_BROWSER: '1' },
   });
 
   serverProcess.on('error', err => {
@@ -177,36 +180,40 @@ async function createWindow() {
     ? path.join(process.resourcesPath, iconFile)
     : path.join(__dirname, iconFile);
 
+  // Compact desktop tool — фіксоване вікно, не resizable.
+  // Це native Windows app, не браузер: нема адресного рядка, нема вкладок.
   mainWindow = new BrowserWindow({
-    width:           620,
-    height:          820,
-    minWidth:        520,
-    minHeight:       640,
-    resizable:       true,
-    fullscreenable:  true,
-    title:           'Sleng Унікалізатор',
+    width:           980,
+    height:          680,
+    minWidth:        980,
+    minHeight:       680,
+    maxWidth:        980,
+    maxHeight:       680,
+    resizable:       false,
+    maximizable:     false,
+    fullscreenable:  false,
+    title:           'Sleng Uniquifier',
     icon:            iconPath,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#050505',
+    autoHideMenuBar: true,
+    frame:           true,
     show:            false,
     webPreferences: {
       nodeIntegration:  false,
       contextIsolation: true,
+      devTools:         true,    // тримаємо доступним для діагностики через Ctrl+Shift+I
     },
   });
 
   // Прибираємо menubar повністю — професійний нативний look без зайвого File/Edit/View
   Menu.setApplicationMenu(null);
 
-  // Хоткеї:
-  //   F11           — fullscreen toggle
-  //   Ctrl+Shift+I  — Chromium DevTools (для діагностики при проблемах)
+  // Хоткеї для діагностики (вікно фіксоване — F11/maximize не потрібні)
+  //   Ctrl+Shift+I  — Chromium DevTools
   //   Ctrl+R / F5   — reload
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
-    if (input.key === 'F11') {
-      mainWindow.setFullScreen(!mainWindow.isFullScreen());
-      event.preventDefault();
-    } else if (input.control && input.shift && input.key.toUpperCase() === 'I') {
+    if (input.control && input.shift && input.key.toUpperCase() === 'I') {
       mainWindow.webContents.toggleDevTools();
       event.preventDefault();
     } else if ((input.control && input.key.toUpperCase() === 'R') || input.key === 'F5') {

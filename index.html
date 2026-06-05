@@ -3,1390 +3,965 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Traffic Sleng — Uniq Studio</title>
+<title>Sleng Uniquifier</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
-   БРЕНД-ШРИФТИ
-   ▸ Заголовки/body: system sans (Segoe UI Variable + Inter fallback)
-     — повна кирилиця, native feel.
-   ▸ Cascadia Code — для tech-values (Machine ID, MD5, версія, коди).
+   FONTS — Roboto (UI, fallback на Inter system) + Cascadia Code (mono)
    ═══════════════════════════════════════════════════════════════════════════ */
 @font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/Roboto-Regular.ttf') format('truetype'), url('fonts/Roboto-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/Roboto-Medium.ttf') format('truetype'), url('fonts/Roboto-Medium.ttf') format('truetype');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/Roboto-Bold.ttf') format('truetype'), url('fonts/Roboto-Bold.ttf') format('truetype');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
   font-family: 'Cascadia Code';
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  src: url('/fonts/CascadiaCode.ttf') format('truetype'),
-       url('fonts/CascadiaCode.ttf') format('truetype');
+  src: url('/fonts/CascadiaCode.ttf') format('truetype'), url('fonts/CascadiaCode.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   ДИЗАЙН-ТОКЕНИ
+   DESIGN TOKENS — Linear style.
+   Не pure black, а warm dark gray (zinc-palette).
+   Жовтий використовується мінімально — тільки для активних/важливих елементів.
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* Layers */
-  --bg-root:           #050505;
-  --bg-shell:          #09090B;
-  --bg-panel:          #101014;
-  --bg-panel-raised:   #16161B;
-  --bg-control:        #0C0C0F;
-  --bg-elevated:       #1B1B22;
+  --bg-main:       #1A1A1D;   /* Linear-like warm dark */
+  --bg-panel:      #18181B;   /* sidebar/topbar (трохи темніше) */
+  --bg-card:       #1F1F23;   /* lifted card */
+  --bg-card-hover: #25252B;   /* hover state */
+  --bg-control:    #161619;   /* inputs/inset */
+  --bg-elevated:   #2A2A30;   /* кнопки/опції */
 
-  /* Borders */
-  --border-soft:       rgba(255,255,255,0.06);
-  --border-medium:     rgba(255,255,255,0.10);
-  --border-strong:     rgba(255,255,255,0.16);
-  --border-accent:     rgba(255,138,0,0.35);
-  --border-success:    rgba(44,229,123,0.32);
+  --border-soft:   rgba(255,255,255,0.05);
+  --border-medium: rgba(255,255,255,0.09);
+  --border-strong: rgba(255,255,255,0.14);
 
-  /* Text */
-  --text-main:         #F4F4F5;
-  --text-muted:        #A1A1AA;
-  --text-soft:         #71717A;
-  --text-faint:        #52525B;
+  --yellow:        #F2C12E;   /* трохи приглушений Linear-yellow */
+  --yellow-hover:  #FFCF42;
+  --yellow-soft:   rgba(242,193,46,0.12);
+  --yellow-border: rgba(242,193,46,0.32);
 
-  /* Brand accents */
-  --accent-yellow:     #FFD60A;
-  --accent-orange:     #FF7A00;
-  --accent-amber:      #FFB020;
-  --accent-red-orange: #B83B00;
-  --accent-grad:       linear-gradient(135deg, #FFD60A, #FF7A00 60%, #B83B00);
+  --text-main:     #E4E4E7;   /* zinc-200 */
+  --text-muted:    #A1A1AA;   /* zinc-400 */
+  --text-dim:      #71717A;   /* zinc-500 */
+  --text-faint:    #52525B;   /* zinc-600 */
 
-  /* Semantic */
-  --success:           #2CE57B;
-  --danger:            #FF4D4D;
-  --warning:           #FFB020;
-  --info:              #4DA3FF;
+  --success:       #4ADE80;
+  --danger:        #F87171;
+  --info:          #60A5FA;
 
-  /* Radii */
-  --radius-xs:         6px;
-  --radius-sm:         8px;
-  --radius-md:         12px;
-  --radius-lg:         16px;
-  --radius-xl:         22px;
+  --radius-xs:     4px;
+  --radius-sm:     6px;
+  --radius-md:     8px;
+  --radius-lg:     12px;
 
-  /* Shadows */
-  --shadow-card:       0 16px 40px rgba(0,0,0,0.36);
-  --shadow-glow:       0 0 30px rgba(255,138,0,0.18);
-  --shadow-glow-soft:  0 0 18px rgba(255,138,0,0.10);
-
-  /* Motion */
-  --transition-fast:   150ms ease-out;
-  --transition-base:   220ms ease-out;
-  --transition-slow:   360ms cubic-bezier(.2,.7,.2,1);
-
-  /* Font stacks */
-  --font-sans:         'Segoe UI Variable','Segoe UI','Inter','Manrope',-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;
-  --font-mono:         'Cascadia Code','SF Mono','Menlo','Consolas',monospace;
+  --font-sans:     'Roboto', 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif;
+  --font-mono:     'Cascadia Code', 'SF Mono', Consolas, 'Courier New', monospace;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   RESET
-   ═══════════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { height: 100%; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
 body {
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: -.002em;
+  color: var(--text-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background:
-    radial-gradient(circle at 80% 0%, rgba(255,138,0,0.10), transparent 32%),
-    radial-gradient(circle at 0% 100%, rgba(255,214,10,0.06), transparent 28%),
-    var(--bg-root);
-  color: var(--text-main);
-  min-height: 100vh;
-  overflow-x: hidden;
+  background: var(--bg-main);  /* плоский, без radial-gradient — як у Linear */
+  user-select: none;
 }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--yellow); cursor: pointer; text-decoration: none; }
+a:hover { color: var(--yellow-hover); }
+code { font-family: var(--font-mono); }
+input { user-select: text; }
 
-/* Tonкий брендовий scrollbar */
-::-webkit-scrollbar             { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb       { background: rgba(255,138,0,.18); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,138,0,.32); }
+:focus-visible { outline: 2px solid var(--yellow); outline-offset: 1px; border-radius: 4px; }
+
+::-webkit-scrollbar             { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb       { background: rgba(255,255,255,.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,212,0,.32); }
 ::-webkit-scrollbar-track       { background: transparent; }
 
-/* Subtle noise overlay */
-.noise {
-  position: fixed; inset: 0; pointer-events: none; z-index: 1;
-  opacity: 0.025;
-  background-image:
-    repeating-radial-gradient(circle at 30% 30%, rgba(255,255,255,.5) 0, transparent 1px),
-    repeating-radial-gradient(circle at 70% 70%, rgba(255,255,255,.5) 0, transparent 1px);
-  background-size: 3px 3px;
-}
-
-/* Focus ring */
-:focus-visible {
-  outline: 2px solid var(--accent-orange);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-button, input, textarea, select { font: inherit; color: inherit; }
-button { cursor: pointer; }
-a { color: var(--accent-amber); text-decoration: none; cursor: pointer; }
-a:hover { color: var(--accent-yellow); }
-code { font-family: var(--font-mono); }
+.noise { display: none; }   /* Linear не має noise — чистий плоский фон */
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   APP SHELL
+   APP — статичний 980×680, grid: header / body / status
    ═══════════════════════════════════════════════════════════════════════════ */
-.app-shell {
-  position: relative;
-  z-index: 10;
-  max-width: 1240px;
-  width: calc(100% - 32px);
-  margin: 16px auto;
-  background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.012));
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
+.app {
+  position: relative; z-index: 10;
+  width: 100vw; height: 100vh;
+  display: grid;
+  grid-template-rows: 64px 1fr 56px;
   overflow: hidden;
-  min-height: calc(100vh - 32px);
-  display: flex;
-  flex-direction: column;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   APP HEADER
-   ═══════════════════════════════════════════════════════════════════════════ */
-.app-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  height: 64px;
-  padding: 0 20px;
+/* ───── TOPBAR — Linear style ───── */
+.app-topbar {
+  padding: 0 16px;
+  display: flex; align-items: center; justify-content: space-between;
   border-bottom: 1px solid var(--border-soft);
-  background: linear-gradient(180deg, rgba(255,138,0,0.025), rgba(255,138,0,0.005));
-  flex-shrink: 0;
+  background: var(--bg-panel);
 }
-
-.brand-mark {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-.brand-mark svg { flex-shrink: 0; filter: drop-shadow(0 4px 12px rgba(255,138,0,.32)); }
-.brand-info { display: flex; flex-direction: column; line-height: 1.15; }
-.brand-name {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: -.015em;
-}
-.brand-sub {
-  font-size: 11px;
-  color: var(--text-soft);
-  letter-spacing: .02em;
-}
-
-.header-spacer { flex: 1; }
-
-.status-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 6px 12px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border-soft);
-  border-radius: 100px;
-}
-.status-item {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.status-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 8px var(--success);
-  animation: statusPulse 2.4s ease-in-out infinite;
-}
-@keyframes statusPulse { 0%,100%{ opacity:.7 } 50%{ opacity:1 } }
-.status-dot.warn { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
-.status-dot.err  { background: var(--danger);  box-shadow: 0 0 8px var(--danger); }
-
-.header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.icon-btn {
-  width: 32px; height: 32px;
+.brand { display: flex; align-items: center; gap: 9px; cursor: pointer; padding: 4px 6px; border-radius: var(--radius-sm); transition: background .12s ease; }
+.brand:hover { background: var(--bg-card-hover); }
+.brand-logo {
+  width: 26px; height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--yellow);
   display: flex; align-items: center; justify-content: center;
+}
+.brand-logo svg { color: #1A1A1D; }
+.brand-info { line-height: 1.15; }
+.brand-name { font-size: 13px; font-weight: 600; color: var(--text-main); letter-spacing: -.01em; }
+.brand-sub  { font-size: 10.5px; color: var(--text-dim); letter-spacing: -.005em; }
+
+.app-status-pill {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 10px 4px 8px;
   background: transparent;
   border: 1px solid var(--border-soft);
+  border-radius: 100px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  transition: background .12s ease;
+}
+.app-status-pill:hover { background: var(--bg-card-hover); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+.status-dot.warn { background: var(--yellow); }
+.status-dot.err  { background: var(--danger); }
+
+.topbar-actions { display: flex; align-items: center; gap: 4px; }
+.icon-btn {
+  width: 28px; height: 28px;
+  background: transparent;
+  border: none;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
-  transition: all var(--transition-fast);
+  display: flex; align-items: center; justify-content: center;
+  transition: all .12s ease;
 }
-.icon-btn:hover {
-  background: rgba(255,138,0,.08);
-  border-color: var(--border-accent);
-  color: var(--text-main);
-}
+.icon-btn:hover { background: var(--bg-card-hover); color: var(--text-main); }
 .version-badge {
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-soft);
-  padding: 4px 8px;
-  background: rgba(255,255,255,.02);
+  font-size: 10.5px;
+  color: var(--text-dim);
+  padding: 3px 7px;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-xs);
-  letter-spacing: .02em;
+  letter-spacing: .01em;
+  margin-left: 4px;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   WORKSPACE (3-колонковий грід для головного екрану)
-   ═══════════════════════════════════════════════════════════════════════════ */
-.workspace-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.workspace {
+/* ───── BODY ───── */
+.app-body {
+  padding: 16px 18px;
   display: grid;
-  grid-template-columns: minmax(360px, 1.05fr) minmax(320px, 0.9fr) 340px;
-  gap: 16px;
-  padding: 18px;
-  flex: 1;
-  align-content: start;
-}
-@media (max-width: 1100px) {
-  .workspace { grid-template-columns: 1fr 1fr; }
-  .workspace > :nth-child(3) { grid-column: span 2; }
-}
-@media (max-width: 760px) {
-  .workspace { grid-template-columns: 1fr; padding: 14px; }
-  .workspace > * { grid-column: auto !important; }
-}
-
-/* Auth екрани — компактна центрова панель */
-.auth-stage {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 20px;
-}
-.auth-card {
-  width: 100%;
-  max-width: 440px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-xl);
-  padding: 30px 28px;
-  box-shadow: var(--shadow-card);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   UI-PANEL: базова панель
-   ═══════════════════════════════════════════════════════════════════════════ */
-.ui-panel {
-  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.020));
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 14px;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  position: relative;
 }
-.panel-head {
-  padding: 16px 18px 12px;
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.card-head {
+  padding: 14px 16px 12px;
   border-bottom: 1px solid var(--border-soft);
-  background: linear-gradient(180deg, rgba(255,138,0,.022), transparent);
+  flex-shrink: 0;
 }
-.panel-title {
-  font-size: 14px;
-  font-weight: 650;
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-main);
   letter-spacing: -.005em;
-  display: flex; align-items: center; gap: 8px;
+  text-transform: none;            /* НЕ uppercase — Linear не використовує */
 }
-.panel-title svg { color: var(--accent-orange); }
-.panel-subtitle {
-  font-size: 12px;
-  color: var(--text-soft);
+.card-sub {
+  font-size: 11.5px;
+  color: var(--text-dim);
   margin-top: 3px;
-  line-height: 1.4;
+  letter-spacing: -.002em;
 }
-.panel-body {
-  padding: 16px 18px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  flex: 1;
-}
+.card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; overflow: auto; }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   LEFT PANEL: VIDEO INPUT
-   ═══════════════════════════════════════════════════════════════════════════ */
-.drop-zone, .dz {
+/* DROP ZONE — Linear plain dashed area */
+.dz {
   position: relative;
-  min-height: 240px;
-  border: 1.5px dashed var(--border-medium);
-  border-radius: var(--radius-lg);
-  background: rgba(255,255,255,0.018);
+  flex: 1;
+  min-height: 200px;
+  border: 1px dashed var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--bg-control);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 10px;
-  padding: 24px 18px;
-  cursor: pointer;
+  gap: 6px;
+  padding: 18px 16px;
   text-align: center;
-  transition: all var(--transition-base);
+  cursor: pointer;
+  transition: all .15s ease;
 }
-.dz:hover {
-  border-color: var(--border-accent);
-  background: rgba(255,138,0,0.025);
-  box-shadow: inset 0 0 30px rgba(255,138,0,0.05);
-}
-.dz.over {
-  border-style: solid;
-  border-color: rgba(255,138,0,.55);
-  background: rgba(255,138,0,0.05);
-  transform: scale(1.005);
-  box-shadow: var(--shadow-glow);
-}
-.dz-icon {
-  width: 38px; height: 38px;
-  color: var(--text-soft);
-  margin-bottom: 2px;
-}
-.dz:hover .dz-icon { color: var(--accent-orange); }
-.dz-main { font-size: 15px; font-weight: 500; color: var(--text-main); }
-.dz-or { font-size: 12px; color: var(--text-faint); }
+.dz:hover { border-color: var(--border-strong); background: var(--bg-card-hover); }
+.dz.over  { border-style: solid; border-color: var(--yellow); background: var(--yellow-soft); }
+.dz-icon { width: 30px; height: 30px; color: var(--text-dim); margin-bottom: 4px; }
+.dz:hover .dz-icon { color: var(--text-muted); }
+.dz-main { font-size: 13px; font-weight: 500; color: var(--text-main); letter-spacing: -.005em; }
+.dz-or   { font-size: 11px; color: var(--text-faint); }
 .btn-choose {
-  background: rgba(255,255,255,.06);
+  background: var(--bg-elevated);
   border: 1px solid var(--border-medium);
-  border-radius: 100px;
-  padding: 8px 18px;
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  padding: 5px 14px;
+  font-size: 12px;
   color: var(--text-main);
-  transition: all var(--transition-fast);
+  transition: all .12s ease;
   margin-top: 4px;
+  font-weight: 500;
 }
-.btn-choose:hover {
-  background: rgba(255,138,0,.10);
-  border-color: var(--border-accent);
-}
+.btn-choose:hover { background: var(--bg-card-hover); border-color: var(--border-strong); }
 .dz-fmts {
-  font-size: 11px;
-  color: var(--text-faint);
-  margin-top: 4px;
-  font-family: var(--font-mono);
-  letter-spacing: .04em;
+  font-size: 10.5px; color: var(--text-faint);
+  letter-spacing: .02em;
+  margin-top: 6px;
 }
 
-/* Файл-картка (після завантаження) */
-.file-card, .finfo {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px;
-  background: var(--bg-panel-raised);
+/* FILE CARD — Linear-style flat row */
+.finfo {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px 8px 8px;
+  background: var(--bg-card-hover);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  animation: fadeIn .3s ease-out;
+  border-radius: var(--radius-sm);
 }
 .fthumb {
-  width: 56px; height: 56px;
-  border-radius: var(--radius-sm);
+  width: 40px; height: 40px;
+  border-radius: var(--radius-xs);
   background: var(--bg-control);
   flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 22px;
+  font-size: 17px;
   overflow: hidden;
 }
 .fthumb img { width: 100%; height: 100%; object-fit: cover; }
 .fdetails { flex: 1; min-width: 0; }
 .fname {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12.5px; font-weight: 500;
   color: var(--text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 1px;
+  letter-spacing: -.002em;
 }
-.fmeta {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  letter-spacing: .02em;
-}
+.fmeta { font-size: 11px; color: var(--text-muted); letter-spacing: -.002em; }
 .fremove {
-  width: 28px; height: 28px;
-  border-radius: 50%;
+  width: 24px; height: 24px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  transition: all .12s ease;
+  flex-shrink: 0;
+}
+.fremove:hover { background: var(--bg-elevated); color: var(--danger); }
+
+/* PRESETS — Linear-list style: flat rows з невеличким dot замість border-glow */
+.presets { display: flex; flex-direction: column; gap: 2px; }
+.pbtn {
+  position: relative;
   background: transparent;
   border: 1px solid transparent;
-  color: var(--text-soft);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-}
-.fremove:hover {
-  background: rgba(255,77,77,.10);
-  border-color: rgba(255,77,77,.35);
-  color: var(--danger);
-}
-
-/* Source Details */
-.source-details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  background: var(--border-soft);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--border-soft);
-}
-.sd-cell {
-  padding: 10px 12px;
-  background: var(--bg-panel);
-  display: flex; flex-direction: column; gap: 2px;
-}
-.sd-l {
-  font-size: 10.5px;
-  color: var(--text-soft);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-.sd-v {
-  font-size: 13px;
-  color: var(--text-main);
-  font-family: var(--font-mono);
-  letter-spacing: .02em;
-}
-.sd-v.muted { color: var(--text-soft); }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   CENTER PANEL: UNIQUENESS IMPACT
-   ═══════════════════════════════════════════════════════════════════════════ */
-.impact-block {
-  display: flex; flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
-  background: var(--bg-panel-raised);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-}
-.impact-row { display: flex; align-items: baseline; justify-content: space-between; }
-.impact-label {
-  font-size: 11px;
-  color: var(--text-soft);
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-.impact-score {
-  font-size: 28px;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  background: var(--accent-grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  letter-spacing: -.01em;
-}
-.impact-meter {
-  position: relative;
-  height: 8px;
-  background: var(--bg-control);
-  border-radius: 100px;
-  overflow: hidden;
-}
-.impact-meter-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  background: var(--accent-grad);
-  border-radius: 100px;
-  transition: width var(--transition-slow);
-  box-shadow: 0 0 10px rgba(255,138,0,.4);
-}
-.impact-mode {
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-/* What will change */
-.changes-list {
-  display: flex; flex-direction: column;
-  gap: 6px;
-}
-.changes-title {
-  font-size: 11px;
-  color: var(--text-soft);
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  margin-bottom: 2px;
-}
-.change-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 7px 10px;
-  background: var(--bg-control);
-  border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
-  font-size: 12.5px;
-  color: var(--text-main);
-}
-.change-item svg {
-  flex-shrink: 0;
-  color: var(--accent-orange);
-}
-
-/* Preset cards */
-.preset-grid, .presets {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-.preset-card, .pbtn {
-  position: relative;
-  display: flex; flex-direction: column; align-items: flex-start;
-  gap: 4px;
-  padding: 12px 12px 11px;
-  background: var(--bg-panel-raised);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
+  padding: 8px 10px 9px 34px;
   text-align: left;
-  transition: all var(--transition-fast);
+  transition: all .12s ease;
+  display: flex; flex-direction: column; gap: 1px;
 }
-.preset-card:hover, .pbtn:hover {
-  background: var(--bg-elevated);
-  border-color: var(--border-medium);
-}
-.preset-card.on, .pbtn.on {
-  background: linear-gradient(180deg, rgba(255,138,0,0.14), rgba(255,138,0,0.05));
-  border-color: var(--border-accent);
-  box-shadow: var(--shadow-glow-soft), inset 0 1px 0 rgba(255,180,40,0.08);
-}
-.preset-card.on::after, .pbtn.on::after {
+.pbtn::before {
   content: '';
   position: absolute;
-  top: 8px; right: 8px;
+  left: 12px; top: 14px;
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: var(--accent-orange);
-  box-shadow: 0 0 8px var(--accent-orange);
+  border: 1.5px solid var(--text-dim);
+  background: transparent;
+  transition: all .12s ease;
 }
-.pname {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: -.005em;
+.pbtn:hover {
+  background: var(--bg-card-hover);
 }
-.pdesc {
-  font-size: 11px;
-  color: var(--text-soft);
-  line-height: 1.4;
+.pbtn:hover::before { border-color: var(--text-muted); }
+.pbtn.on {
+  background: var(--bg-card-hover);
+  border-color: var(--border-soft);
 }
-.pbtn.on .pname { color: var(--accent-amber); }
+.pbtn.on::before {
+  border-color: var(--yellow);
+  background: var(--yellow);
+  box-shadow: inset 0 0 0 2px var(--bg-card-hover);
+}
+.pname { font-size: 12.5px; font-weight: 600; color: var(--text-main); letter-spacing: -.005em; }
+.pbtn.on .pname { color: var(--yellow); }
+.pdesc { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   RIGHT PANEL: SETTINGS & EXPORT
-   ═══════════════════════════════════════════════════════════════════════════ */
-.setting-card {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 12px 14px;
-  background: var(--bg-panel-raised);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+/* IMPACT — мінімалістичний meter без декору */
+.impact {
+  display: flex; flex-direction: column;
+  gap: 5px;
+  padding: 2px 0;
 }
-.setting-card:hover { border-color: var(--border-medium); }
-.setting-card-info { flex: 1; min-width: 0; }
-.setting-card-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-  margin-bottom: 2px;
-}
-.setting-card-desc {
-  font-size: 11.5px;
-  color: var(--text-soft);
-  line-height: 1.4;
-}
+.impact-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 11.5px; }
+.impact-l { color: var(--text-dim); letter-spacing: -.002em; }
+.impact-v { color: var(--text-main); font-weight: 600; font-size: 11.5px; }
+.impact-bar { position: relative; height: 3px; background: var(--bg-elevated); border-radius: 100px; overflow: hidden; }
+.impact-fill { position: absolute; inset: 0 auto 0 0; background: var(--yellow); border-radius: 100px; transition: width .35s ease; }
 
-/* Toggle */
+/* OPTIONS — flat rows без bg, лише hover */
+.options-list { display: flex; flex-direction: column; gap: 0; }
+.opt-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 8px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  gap: 10px;
+  transition: background .12s ease;
+}
+.opt-row:hover { background: var(--bg-card-hover); }
+.opt-label { font-size: 12.5px; color: var(--text-main); line-height: 1.3; letter-spacing: -.002em; }
 .tgl {
-  width: 40px; height: 22px;
-  background: var(--bg-control);
-  border: 1px solid var(--border-medium);
+  width: 28px; height: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid transparent;
   border-radius: 100px;
   position: relative;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background .15s ease;
   flex-shrink: 0;
-  margin-top: 1px;
 }
-.tgl-dot {
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  background: var(--text-muted);
-  position: absolute;
-  top: 2px; left: 2px;
-  transition: all var(--transition-base);
-}
-.tgl.on {
-  background: var(--accent-orange);
-  border-color: var(--accent-orange);
-  box-shadow: 0 0 10px rgba(255,138,0,.32);
-}
-.tgl.on .tgl-dot { left: 20px; background: #fff; }
+.tgl-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--text-muted); position: absolute; top: 1px; left: 1px; transition: all .15s ease; }
+.tgl.on { background: var(--yellow); }
+.tgl.on .tgl-dot { left: 14px; background: #1A1A1D; }
 
-/* Output summary */
-.summary-card {
-  background: var(--bg-control);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
-  display: flex; flex-direction: column;
-  gap: 8px;
-}
-.summary-row {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 12.5px;
-}
-.summary-row + .summary-row {
-  padding-top: 8px;
-  border-top: 1px solid var(--border-soft);
-}
-.summary-l { color: var(--text-soft); }
-.summary-v { color: var(--text-main); font-family: var(--font-mono); font-size: 12px; }
-.summary-v.accent { color: var(--accent-amber); font-weight: 600; }
-.summary-v.success { color: var(--success); }
+/* SUMMARY — list-style metadata як в Linear sidebar */
+.summary { padding: 2px 0; display: flex; flex-direction: column; gap: 0; }
+.sum-row { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; padding: 6px 8px; border-radius: var(--radius-sm); transition: background .12s ease; }
+.sum-row:hover { background: var(--bg-card-hover); }
+.sum-l { color: var(--text-dim); letter-spacing: -.002em; }
+.sum-v { color: var(--text-main); font-size: 11.5px; text-align: right; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sum-v.accent  { color: var(--yellow); font-weight: 600; }
+.sum-v.success { color: var(--success); }
 
-/* Primary action */
-.primary-action, .btn-go {
+/* PRIMARY BUTTON — Linear flat solid */
+.primary-btn, .btn-go {
   width: 100%;
-  height: 46px;
-  background: var(--accent-grad);
+  height: 36px;
+  background: var(--yellow);
+  color: #1A1A1D;
+  font-weight: 600;
+  font-size: 13px;
   border: none;
-  border-radius: var(--radius-md);
-  color: #1a1208;
-  font-size: 14.5px;
-  font-weight: 700;
+  border-radius: var(--radius-sm);
+  transition: all .12s ease;
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px;
   letter-spacing: -.005em;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  box-shadow: 0 6px 18px rgba(255,138,0,.28), inset 0 1px 0 rgba(255,255,255,.18);
-  display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-.primary-action:hover:not(:disabled), .btn-go:hover:not(:disabled) {
-  filter: brightness(1.08) saturate(1.1);
-  box-shadow: 0 10px 30px rgba(255,138,0,.42);
-  transform: translateY(-1px);
+.primary-btn:hover:not(:disabled), .btn-go:hover:not(:disabled) {
+  background: var(--yellow-hover);
 }
-.primary-action:disabled, .btn-go:disabled {
+.primary-btn:disabled, .btn-go:disabled {
   background: var(--bg-elevated);
   color: var(--text-faint);
   cursor: not-allowed;
   box-shadow: none;
-  transform: none;
 }
-.action-hint {
-  text-align: center;
-  font-size: 11.5px;
-  color: var(--text-soft);
-  line-height: 1.4;
-  margin-top: 2px;
-  min-height: 16px;
-}
+.action-hint { text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 2px; min-height: 14px; }
 .action-hint.ready { color: var(--success); }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   STATUS DOCK (показуємо під час обробки)
-   ═══════════════════════════════════════════════════════════════════════════ */
-.status-dock {
-  margin: 0 18px 18px;
-  padding: 18px 22px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-accent);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card), var(--shadow-glow-soft);
-}
-.dock-head {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 14px;
-}
-.dock-title {
-  font-size: 15px; font-weight: 650; color: var(--text-main);
-}
-.dock-pct {
-  font-size: 32px;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  background: var(--accent-grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  letter-spacing: -.02em;
-  line-height: 1;
-}
-.dock-track {
-  position: relative;
-  height: 8px;
-  background: var(--bg-control);
-  border-radius: 100px;
-  overflow: hidden;
-}
-.dock-fill, .prog-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0;
-  background: var(--accent-grad);
-  border-radius: 100px;
-  transition: width .35s cubic-bezier(.2,.7,.2,1);
-  box-shadow: 0 0 14px rgba(255,138,0,.42);
-}
-.dock-fill.done, .prog-fill.done {
-  background: linear-gradient(135deg, #2CE57B, #14B86D);
-  box-shadow: 0 0 14px rgba(44,229,123,.42);
-}
-.dock-stage {
-  margin-top: 10px;
-  font-size: 12.5px;
-  color: var(--text-muted);
-}
+.sec-label { font-size: 10.5px; color: var(--text-dim); letter-spacing: -.002em; font-weight: 600; margin-bottom: 6px; padding: 0 2px; }
 
-/* Stage chips */
-.stage-chips {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  margin-top: 14px;
+/* ───── FOOTER — Linear status bar style ───── */
+.app-status {
+  padding: 0 16px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+  display: flex; align-items: center; gap: 12px;
 }
-.stage-chip {
-  padding: 7px 10px;
-  background: var(--bg-control);
+.footer-label { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; letter-spacing: -.002em; }
+.footer-track { flex: 1; height: 3px; background: var(--bg-elevated); border-radius: 100px; overflow: hidden; position: relative; }
+.footer-fill, .prog-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--yellow); border-radius: 100px; transition: width .28s ease; }
+.footer-fill.done, .prog-fill.done { background: var(--success); }
+.footer-pct { font-weight: 600; font-size: 11.5px; color: var(--text-main); min-width: 38px; text-align: right; }
+.footer-cancel {
+  height: 24px;
+  padding: 0 10px;
+  background: transparent;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
-  font-size: 11px;
-  color: var(--text-soft);
-  text-align: center;
-  letter-spacing: .03em;
-  transition: all var(--transition-base);
-}
-.stage-chip.active {
-  background: linear-gradient(180deg, rgba(255,138,0,.16), rgba(255,138,0,.06));
-  border-color: var(--border-accent);
-  color: var(--accent-amber);
-  font-weight: 600;
-}
-.stage-chip.done {
-  border-color: var(--border-success);
-  color: var(--success);
-}
-
-.dock-actions { display: flex; gap: 10px; margin-top: 14px; }
-.btn-cancel {
-  flex: 1;
-  height: 38px;
-  background: transparent;
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-sm);
   color: var(--text-muted);
-  font-size: 13px;
-  transition: all var(--transition-fast);
+  font-size: 11px;
+  transition: all .12s ease;
 }
-.btn-cancel:hover {
-  background: rgba(255,77,77,.06);
-  border-color: rgba(255,77,77,.35);
-  color: var(--danger);
-}
+.footer-cancel:hover { background: var(--bg-card-hover); color: var(--danger); border-color: var(--border-medium); }
+.footer-meta { color: var(--text-dim); font-size: 11.5px; letter-spacing: -.002em; }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   ERROR CARD
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* PROCESSING / RESULT — overlay над body */
+.body-overlay {
+  position: absolute;
+  inset: 16px 18px 16px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  z-index: 5;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.processing-card { width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.processing-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
+.processing-stage { font-size: 12px; color: var(--text-muted); min-height: 16px; }
+.dots-anim { display: inline-block; min-width: 12px; text-align: left; }
+
 .error-card, .prog-err {
-  margin: 14px 0 0;
-  padding: 16px 18px;
+  margin-top: 14px;
+  width: 100%;
+  max-width: 380px;
+  padding: 12px 14px;
   background: rgba(255,77,77,.06);
   border: 1px solid rgba(255,77,77,.32);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
+  text-align: left;
   display: none;
 }
 .error-card.show, .prog-err.show { display: block; }
-.error-title {
-  font-size: 13.5px;
-  font-weight: 650;
-  color: var(--danger);
-  margin-bottom: 6px;
-  display: flex; align-items: center; gap: 8px;
-}
-.error-text {
-  font-size: 13px;
-  color: var(--text-main);
-  line-height: 1.5;
-  margin-bottom: 4px;
-}
-.error-tech {
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--text-muted);
-  word-break: break-word;
-  margin-bottom: 12px;
-  padding: 8px 10px;
-  background: rgba(0,0,0,.32);
-  border-radius: var(--radius-sm);
-}
-.error-actions { display: flex; gap: 8px; }
+.error-title { font-size: 12px; font-weight: 700; color: var(--danger); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.error-text { font-size: 12px; color: var(--text-main); line-height: 1.4; margin-bottom: 4px; }
+.error-tech { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); word-break: break-word; padding: 6px 8px; background: rgba(0,0,0,.32); border-radius: 4px; margin-bottom: 10px; }
 .btn-err-back {
-  height: 36px;
-  padding: 0 18px;
+  height: 30px;
+  padding: 0 14px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   color: var(--text-main);
-  font-size: 13px;
-  transition: all var(--transition-fast);
+  font-size: 12px;
+  transition: all .15s ease;
 }
-.btn-err-back:hover {
-  background: var(--bg-control);
-  border-color: var(--border-accent);
-}
+.btn-err-back:hover { background: var(--bg-card-hover); border-color: var(--yellow-border); }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   RESULT CARD (повний-ширини після обробки)
-   ═══════════════════════════════════════════════════════════════════════════ */
-.result-card {
-  margin: 18px;
-  padding: 28px 24px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-success);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card), 0 0 30px rgba(44,229,123,0.10);
-  text-align: center;
-}
-.res-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
-
-.ck { width: 64px; height: 64px; }
-.ck-c, .ck-p {
-  stroke-dasharray: 200; stroke-dashoffset: 200;
-  animation: drawCk 1s ease-out forwards;
-}
+/* RESULT */
+.result-card-inner { width: 100%; max-width: 440px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.ck { width: 52px; height: 52px; }
+.ck-c, .ck-p { stroke-dasharray: 200; stroke-dashoffset: 200; animation: drawCk 1s ease-out forwards; }
 .ck-p { animation-delay: .35s; }
 @keyframes drawCk { to { stroke-dashoffset: 0; } }
-
-.res-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: -.02em;
-}
-.res-sub {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: -10px;
-  line-height: 1.5;
-}
-
+.res-title { font-size: 18px; font-weight: 700; color: var(--text-main); }
+.res-sub { font-size: 12px; color: var(--text-muted); margin-top: -8px; }
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
   background: var(--border-soft);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   border: 1px solid var(--border-soft);
   width: 100%;
-  max-width: 720px;
 }
 .stats-grid.n6 { grid-template-columns: repeat(3, 1fr); }
-.sc {
-  padding: 12px 14px;
-  background: var(--bg-panel-raised);
-  display: flex; flex-direction: column;
-  gap: 4px;
-  text-align: left;
-}
-.sc-l {
-  font-size: 10.5px;
-  color: var(--text-soft);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-.sc-v {
-  font-size: 14px;
-  color: var(--text-main);
-  font-family: var(--font-mono);
-  letter-spacing: .015em;
-}
+.sc { padding: 8px 10px; background: var(--bg-elevated); display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.sc-l { font-size: 9.5px; color: var(--text-dim); letter-spacing: .04em; text-transform: uppercase; }
+.sc-v { font-size: 12px; color: var(--text-main); font-family: var(--font-mono); letter-spacing: .01em; }
 .sc-v.green { color: var(--success); }
-.sc-v.mono { font-size: 11px; word-break: break-all; }
+.sc-v.mono { font-size: 10px; word-break: break-all; }
 
-.result-actions { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 360px; }
+.result-actions { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 280px; }
 .btn-dl {
-  height: 46px;
-  background: linear-gradient(135deg, #2CE57B, #14B86D);
+  height: 38px;
+  background: var(--yellow);
   border: none;
-  border-radius: var(--radius-md);
-  color: #062a14;
-  font-size: 14.5px;
+  border-radius: var(--radius-sm);
+  color: #050505;
+  font-size: 13px;
   font-weight: 700;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: all var(--transition-base);
-  box-shadow: 0 6px 18px rgba(44,229,123,.32);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all .15s ease;
 }
-.btn-dl:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 10px 30px rgba(44,229,123,.45); }
+.btn-dl:hover { background: var(--yellow-hover); box-shadow: 0 4px 14px rgba(255,212,0,.32); }
 .btn-ghost {
-  height: 40px;
+  height: 32px;
   background: transparent;
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-sm);
   color: var(--text-muted);
-  font-size: 13px;
-  transition: all var(--transition-fast);
+  font-size: 12px;
+  transition: all .15s ease;
 }
-.btn-ghost:hover {
-  background: var(--bg-elevated);
-  color: var(--text-main);
-  border-color: var(--border-accent);
-}
-.result-meta {
-  font-size: 11.5px;
-  color: var(--text-soft);
-}
+.btn-ghost:hover { background: var(--bg-elevated); color: var(--text-main); border-color: var(--yellow-border); }
+.result-meta { font-size: 11px; color: var(--text-dim); }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   AUTH CARDS
-   ═══════════════════════════════════════════════════════════════════════════ */
-.auth-form { display: flex; flex-direction: column; gap: 12px; }
-.auth-hero { text-align: center; margin-bottom: 4px; }
-.auth-hero svg { margin-bottom: 4px; filter: drop-shadow(0 4px 14px rgba(255,138,0,.25)); }
-.auth-hero-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: -.02em;
-  margin-top: 4px;
+/* AUTH SCREENS */
+.auth-stage {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(circle at 85% 8%, rgba(255,212,0,0.04), transparent 28%),
+    var(--bg-main);
+  z-index: 20;
+  padding: 16px;
 }
-.auth-hero-sub {
-  font-size: 12.5px;
-  color: var(--text-soft);
-  margin-top: 4px;
-  line-height: 1.5;
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-top: 2px solid var(--yellow);
+  border-radius: var(--radius-md);
+  padding: 24px 22px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.5);
 }
+.auth-form { display: flex; flex-direction: column; gap: 11px; }
+.auth-hero { text-align: center; margin-bottom: 6px; }
+.auth-hero-logo {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  background: var(--yellow);
+  margin: 0 auto 10px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 20px rgba(255,212,0,.32);
+}
+.auth-hero-logo svg { color: #050505; }
+.auth-hero-title { font-size: 16px; font-weight: 700; color: var(--text-main); margin-top: 4px; }
+.auth-hero-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
 
 .auth-input {
   width: 100%;
-  height: 44px;
+  height: 40px;
   background: var(--bg-control);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  padding: 0 14px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  padding: 0 13px;
+  font-size: 13px;
   color: var(--text-main);
   outline: none;
-  transition: all var(--transition-fast);
+  transition: all .15s ease;
 }
 .auth-input::placeholder { color: var(--text-faint); }
-.auth-input:focus {
-  border-color: var(--border-accent);
-  background: var(--bg-panel-raised);
-  box-shadow: 0 0 0 3px rgba(255,138,0,.10);
-}
-.auth-input.err {
-  border-color: rgba(255,77,77,.55);
-  background: rgba(255,77,77,.05);
-}
+.auth-input:focus { border-color: var(--yellow-border); background: var(--bg-elevated); box-shadow: 0 0 0 3px rgba(255,212,0,.10); }
+.auth-input.err { border-color: rgba(255,77,77,.55); background: rgba(255,77,77,.05); }
 
 .auth-err {
-  font-size: 12.5px;
+  font-size: 11.5px;
   color: var(--danger);
   display: none;
-  padding: 8px 12px;
+  padding: 7px 10px;
   background: rgba(255,77,77,.06);
-  border-radius: var(--radius-sm);
-  border-left: 3px solid var(--danger);
+  border-radius: 6px;
+  border-left: 2px solid var(--danger);
 }
 .auth-err.show { display: block; }
 
 .divider-text {
-  display: flex; align-items: center; gap: 12px;
-  font-size: 11px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 10px;
   color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: .12em;
   margin: 4px 0;
 }
-.divider-text::before, .divider-text::after {
-  content: ''; flex: 1; height: 1px; background: var(--border-soft);
-}
+.divider-text::before, .divider-text::after { content: ''; flex: 1; height: 1px; background: var(--border-soft); }
+.auth-hint { text-align: center; font-size: 11.5px; color: var(--text-muted); line-height: 1.5; margin-top: 2px; }
 
-.auth-hint {
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-soft);
-  line-height: 1.5;
-  margin-top: 2px;
-}
-.btn-go.btn-primary-large { gap: 9px; }
-.btn-go.btn-secondary {
-  background: rgba(255,255,255,.04);
-  color: var(--text-main);
-  box-shadow: none;
-  font-weight: 500;
-}
-.btn-go.btn-secondary:hover:not(:disabled) {
-  background: rgba(255,255,255,.07);
-  transform: none;
-  filter: none;
-  box-shadow: none;
-}
+.btn-go.btn-secondary { background: var(--bg-elevated); color: var(--text-main); font-weight: 500; }
+.btn-go.btn-secondary:hover:not(:disabled) { background: var(--bg-card-hover); box-shadow: none; }
 
-/* Pending */
-.pending-icon {
-  display: flex; justify-content: center;
-  margin-bottom: 4px;
-  filter: drop-shadow(0 4px 14px rgba(255,138,0,.30));
-  animation: pendingPulse 2.4s ease-in-out infinite;
-}
-@keyframes pendingPulse {
-  0%,100% { opacity: .80; transform: scale(1); }
-  50%     { opacity: 1;   transform: scale(1.05); }
-}
+.pending-icon { display: flex; justify-content: center; margin-bottom: 4px; animation: pendingPulse 2.4s ease-in-out infinite; }
+.pending-icon svg { color: var(--yellow); }
+@keyframes pendingPulse { 0%,100%{opacity:.82;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
 
-/* Machine box */
-.machine-box {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px;
-  background: var(--bg-control);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-}
+.machine-box { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-control); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); }
 .machine-box > div:first-child { flex: 1; min-width: 0; }
-.machine-label {
-  font-size: 10.5px;
-  color: var(--text-soft);
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  margin-bottom: 3px;
-}
-.machine-id {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  color: var(--text-main);
-  letter-spacing: .05em;
-  word-break: break-all;
-}
+.machine-label { font-size: 10px; color: var(--text-dim); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 3px; }
+.machine-id { font-family: var(--font-mono); font-size: 13px; color: var(--text-main); letter-spacing: .05em; word-break: break-all; }
 .btn-copy {
-  height: 32px;
-  padding: 0 12px;
-  background: rgba(255,138,0,.10);
-  border: 1px solid var(--border-accent);
-  border-radius: var(--radius-sm);
-  color: var(--accent-amber);
-  font-size: 12px;
+  height: 30px;
+  padding: 0 11px;
+  background: var(--yellow-soft);
+  border: 1px solid var(--yellow-border);
+  border-radius: 6px;
+  color: var(--yellow);
+  font-size: 11.5px;
   font-weight: 500;
-  transition: all var(--transition-fast);
+  transition: all .15s ease;
   flex-shrink: 0;
 }
-.btn-copy:hover { background: rgba(255,138,0,.16); }
-.btn-copy.copied {
-  background: rgba(44,229,123,.10);
-  border-color: var(--border-success);
-  color: var(--success);
-}
+.btn-copy:hover { background: rgba(255,212,0,.20); }
+.btn-copy.copied { background: rgba(53,208,127,.10); border-color: rgba(53,208,127,.35); color: var(--success); }
 
-/* No-server banner */
 .no-server {
-  padding: 12px 14px;
-  background: rgba(255,176,32,.06);
-  border: 1px solid rgba(255,176,32,.32);
-  border-radius: var(--radius-md);
-  color: var(--warning);
-  font-size: 12.5px;
+  padding: 10px 12px;
+  background: rgba(255,212,0,.05);
+  border: 1px solid var(--yellow-border);
+  border-radius: var(--radius-sm);
+  color: var(--yellow);
+  font-size: 11.5px;
   line-height: 1.5;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  grid-column: 1 / -1;
 }
 .no-server.off { display: none; }
-.no-server code {
-  background: rgba(0,0,0,.32);
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 11px;
-}
+.no-server code { background: rgba(0,0,0,.32); padding: 1px 5px; border-radius: 3px; font-size: 10.5px; }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   ADMIN OVERLAY (command-modal style)
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ADMIN OVERLAY */
 .admin-overlay {
   position: fixed; inset: 0; z-index: 100;
-  background: rgba(0,0,0,.72);
-  backdrop-filter: blur(8px);
+  background: rgba(0,0,0,.68);
+  backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
-  animation: fadeIn .2s ease-out;
+  animation: fadeIn .18s ease-out;
 }
 .admin-overlay.off { display: none; }
 .admin-panel {
   width: 100%;
-  max-width: 520px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-xl);
-  padding: 22px 24px;
-  box-shadow: 0 24px 80px rgba(0,0,0,.6);
+  max-width: 460px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-top: 2px solid var(--yellow);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.6);
 }
-.admin-hdr {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 18px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border-soft);
-}
-.admin-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-main);
-  display: flex; align-items: center; gap: 8px;
-}
-.admin-title svg { color: var(--accent-orange); }
+.admin-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border-soft); }
+.admin-title { font-size: 13px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+.admin-title svg { color: var(--yellow); }
 .btn-close {
-  width: 28px; height: 28px;
+  width: 26px; height: 26px;
   background: transparent;
   border: 1px solid var(--border-soft);
   border-radius: 50%;
-  color: var(--text-soft);
+  color: var(--text-dim);
   display: flex; align-items: center; justify-content: center;
-  transition: all var(--transition-fast);
+  font-size: 13px;
+  transition: all .15s ease;
 }
-.btn-close:hover {
-  background: rgba(255,77,77,.1);
+.btn-close:hover { background: rgba(255,77,77,.10); border-color: rgba(255,77,77,.32); color: var(--danger); }
+
+.admin-section { display: flex; flex-direction: column; gap: 8px; }
+.admin-section-title { font-size: 10.5px; color: var(--text-dim); letter-spacing: .04em; text-transform: uppercase; font-weight: 700; }
+.admin-sep { height: 1px; background: var(--border-soft); margin: 4px 0; }
+.inline-row { display: flex; gap: 6px; }
+.inline-row .auth-input { flex: 1; }
+.btn-sm {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid var(--border-medium);
+  transition: all .15s ease;
+  flex-shrink: 0;
+}
+.btn-sm-blue  { background: var(--yellow); border-color: var(--yellow); color: #050505; }
+.btn-sm-blue:hover  { background: var(--yellow-hover); }
+.btn-sm-green { background: var(--success); border-color: var(--success); color: #04200f; }
+.btn-sm-green:hover { filter: brightness(1.08); }
+
+.code-result { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--bg-control); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); margin-top: 4px; }
+.code-value { flex: 1; font-family: var(--font-mono); font-size: 14px; letter-spacing: .12em; color: var(--yellow); }
+
+/* SECTIONS show/hide */
+.sec { display: block; }
+.sec.off { display: none !important; }
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+.enter { animation: fadeIn .2s ease-out forwards; }
+.leave { animation: fadeOut .15s ease-in forwards; }
+
+/* Alias-класи (підтримка існуючого JS) */
+.hdr-logo {} .hdr-icon {}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CUSTOM MODAL (замість alert/confirm — native dialog виглядає як веб-сторінка)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.72);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: fadeIn .15s ease-out;
+}
+.modal-overlay.off { display: none; }
+.modal-panel {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-top: 2px solid var(--yellow);
+  border-radius: var(--radius-md);
+  box-shadow: 0 24px 70px rgba(0,0,0,.6);
+  overflow: hidden;
+  animation: modalPop .22s cubic-bezier(.2,.7,.2,1);
+}
+@keyframes modalPop {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);   }
+}
+.modal-head {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  display: flex; align-items: center; gap: 8px;
+}
+.modal-icon {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: var(--yellow-soft);
+  border: 1px solid var(--yellow-border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--yellow);
+  flex-shrink: 0;
+}
+.modal-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  flex: 1;
+}
+.modal-close {
+  width: 24px; height: 24px;
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  border-radius: 50%;
+  color: var(--text-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  transition: all .15s ease;
+}
+.modal-close:hover {
+  background: rgba(255,77,77,.10);
   border-color: rgba(255,77,77,.32);
   color: var(--danger);
 }
-
-.admin-section {
-  display: flex; flex-direction: column; gap: 10px;
+.modal-body {
+  padding: 16px 18px 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-main);
+  max-height: 60vh;
+  overflow: auto;
 }
-.admin-section-title {
-  font-size: 11.5px;
-  color: var(--text-soft);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-.admin-sep {
-  height: 1px;
-  background: var(--border-soft);
+.modal-body p + p { margin-top: 8px; }
+.modal-body ol, .modal-body ul {
+  padding-left: 18px;
   margin: 6px 0;
 }
-
-.inline-row { display: flex; gap: 8px; }
-.inline-row .auth-input { flex: 1; }
-.btn-sm {
-  height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  font-weight: 600;
-  transition: all var(--transition-fast);
-}
-.btn-sm-blue {
-  background: linear-gradient(135deg, var(--info), #2680DD);
-  border-color: rgba(77,163,255,.55);
-  color: #fff;
-}
-.btn-sm-blue:hover { filter: brightness(1.08); }
-.btn-sm-green {
-  background: linear-gradient(135deg, var(--success), #14B86D);
-  border-color: var(--border-success);
-  color: #062a14;
-}
-.btn-sm-green:hover { filter: brightness(1.08); }
-
-.code-result {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 14px;
-  background: var(--bg-control);
-  border: 1px solid var(--border-success);
-  border-radius: var(--radius-md);
-  margin-top: 4px;
-}
-.code-value {
-  flex: 1;
+.modal-body li { margin: 3px 0; }
+.modal-body kbd {
   font-family: var(--font-mono);
-  font-size: 15px;
-  letter-spacing: .12em;
-  color: var(--success);
+  font-size: 11px;
+  background: var(--bg-control);
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--yellow);
 }
+.modal-footer {
+  padding: 12px 18px 14px;
+  display: flex; justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+}
+.modal-btn {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  transition: all .15s ease;
+}
+.modal-btn:hover { background: var(--bg-card-hover); border-color: var(--yellow-border); }
+.modal-btn.primary {
+  background: var(--yellow);
+  border-color: var(--yellow);
+  color: #050505;
+  font-weight: 700;
+}
+.modal-btn.primary:hover { background: var(--yellow-hover); }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   SECTIONS — show/hide
-   ═══════════════════════════════════════════════════════════════════════════ */
-.sec { display: block; }
-.sec.off { display: none !important; }
-
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-4px); } }
-.enter { animation: fadeIn .25s ease-out forwards; }
-.leave { animation: fadeOut .2s ease-in forwards; }
-
-/* Допоміжне для процесу/result */
-.dots-anim { display: inline-block; min-width: 14px; }
-
-/* Glass shine fallback selectors (зворотна сумісність зі старим JS) */
-.panel { --mx: 50%; --my: 50%; }
-
-/* Старі назви в JS — utility hidden */
-.adv-toggle, .adv-body, .res-stats, .prog-panel, .prog-row, .prog-lbl,
-.prog-pct, .prog-track, .prog-stage, .sec-label, .hdr, .hdr-logo, .hdr-title { /* зберігаємо лиш як alias-класи, не використовуємо у новій верстці */ }
-
-/* Прибираємо стару blob-естетику — продукт виглядає як софт, не як заставка */
-.bg { display: none; }
+/* Toast (auto-dismiss notification знизу) */
+.toast-stack {
+  position: fixed;
+  bottom: 18px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex; flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  min-width: 280px;
+  max-width: 420px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--yellow-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 14px 40px rgba(0,0,0,.5);
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12.5px;
+  color: var(--text-main);
+  pointer-events: auto;
+  animation: toastIn .25s cubic-bezier(.2,.7,.2,1);
+}
+.toast.err { border-color: rgba(255,77,77,.45); }
+.toast.ok  { border-color: rgba(53,208,127,.45); }
+.toast-icon { color: var(--yellow); flex-shrink: 0; }
+.toast.err .toast-icon { color: var(--danger); }
+.toast.ok  .toast-icon { color: var(--success); }
+.toast-text { flex: 1; line-height: 1.4; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.toast.leave { animation: toastOut .2s ease-in forwards; }
+@keyframes toastOut {
+  to { opacity: 0; transform: translateY(8px); }
+}
 </style>
 </head>
 <body>
 
 <div class="noise" aria-hidden="true"></div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     APP SHELL
-     ═══════════════════════════════════════════════════════════════════════ -->
-<div class="app-shell" id="panel">
+<!-- ═══════════════════════════════════════════════════════════════════
+     STATIC DESKTOP WINDOW 980×680
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="app" id="panel">
 
-  <!-- ───────────────────────────────────────────────────────────────────
-       HEADER
-       ─────────────────────────────────────────────────────────────────── -->
-  <header class="app-header">
-    <div class="brand-mark hdr-logo" aria-label="Traffic Sleng Uniq Studio">
-      <svg viewBox="0 0 64 64" width="38" height="38" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stop-color="#ffd60a"/>
-            <stop offset="55%"  stop-color="#ff7a00"/>
-            <stop offset="100%" stop-color="#b83b00"/>
-          </linearGradient>
-          <linearGradient id="glossGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%"   stop-color="rgba(255,255,255,.22)"/>
-            <stop offset="55%"  stop-color="rgba(255,255,255,0)"/>
-          </linearGradient>
-        </defs>
-        <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#brandGrad)"/>
-        <rect x="2" y="2" width="60" height="32" rx="17" fill="url(#glossGrad)"/>
-        <rect x="2.5" y="2.5" width="59" height="59" rx="16.5" fill="none" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
-        <rect x="2" y="2" width="60" height="60" rx="17" fill="none" stroke="rgba(0,0,0,.28)" stroke-width=".5"/>
-        <g stroke="#1a1208" stroke-width="2.4" stroke-linecap="round" fill="none" opacity=".92">
-          <path d="M20 40 Q20 25 32 25 Q44 25 44 40"/>
-          <path d="M25 42 Q25 30 32 30 Q39 30 39 42"/>
-          <path d="M30 43 Q30 35 32 35 Q34 35 34 43"/>
-        </g>
-        <circle cx="32" cy="35" r="1.7" fill="#1a1208"/>
-      </svg>
+  <!-- TOPBAR -->
+  <header class="app-topbar">
+    <div class="brand hdr-logo">
+      <div class="brand-logo">
+        <!-- Стилізована літера S — bold geometric, чорна на жовтому фоні -->
+        <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path fill="#050505"
+            d="M17.6 4.2c-1.4-1-3.2-1.6-5.4-1.6-2.1 0-3.8.5-5 1.5-1.3 1-1.9 2.3-1.9 4 0 1.4.5 2.5 1.4 3.4.9.8 2.5 1.4 4.7 1.9 1.7.4 2.7.7 3.1 1 .4.3.6.6.6 1.1 0 .6-.3 1-.8 1.3-.6.3-1.4.4-2.5.4-1.4 0-2.6-.2-3.7-.5-1.1-.3-2.1-.8-3-1.4l-1.7 3.5c1 .8 2.3 1.4 3.8 1.8 1.5.4 3 .6 4.6.6 2.3 0 4.1-.5 5.4-1.5 1.4-1 2.1-2.4 2.1-4.1 0-1.4-.5-2.5-1.4-3.4-.9-.8-2.5-1.4-4.7-1.9-1.7-.4-2.8-.7-3.2-1-.4-.3-.6-.6-.6-1.1 0-.5.3-1 .8-1.3.6-.3 1.4-.4 2.4-.4 1.1 0 2.2.2 3.2.5 1 .3 1.9.7 2.8 1.3l1.7-3.5z"/>
+        </svg>
+      </div>
       <div class="brand-info">
-        <div class="brand-name">Uniq Studio</div>
-        <div class="brand-sub">Унікалізація відео через контроль цифрового відбитку</div>
+        <div class="brand-name">Sleng Uniquifier</div>
+        <div class="brand-sub">Desktop video tool</div>
       </div>
     </div>
 
-    <div class="header-spacer"></div>
-
-    <div class="status-row" id="headerStatus">
-      <div class="status-item">
-        <span class="status-dot" id="statusServerDot"></span>
-        <span id="statusServerText">Server online</span>
-      </div>
-      <div class="status-item" style="border-left: 1px solid var(--border-soft); padding-left: 14px;">
-        <span id="statusPresetText">Режим: <span style="color: var(--accent-amber); font-weight: 600;" id="statusPresetName">Balanced</span></span>
-      </div>
+    <div class="app-status-pill">
+      <span class="status-dot" id="topbarStatusDot"></span>
+      <span id="topbarStatusText">Ready</span>
     </div>
 
-    <div class="header-actions">
+    <div class="topbar-actions">
       <button class="icon-btn" id="btnHelp" title="Допомога" aria-label="Допомога">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
       </button>
       <button class="icon-btn" id="btnAdminTrigger" title="Admin (Ctrl+Shift+A)" aria-label="Admin">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
       </button>
-      <span class="version-badge" id="versionBadge">v1.0.5</span>
+      <span class="version-badge" id="versionBadge">v1.0.6</span>
     </div>
   </header>
 
-  <!-- ───────────────────────────────────────────────────────────────────
-       WORKSPACE WRAP — auth screens OR main workspace
-       ─────────────────────────────────────────────────────────────────── -->
-  <div class="workspace-wrap">
+  <!-- BODY -->
+  <main class="app-body">
 
-    <!-- ── REGISTER (auth-card) ───────────────────────────────────────── -->
+    <!-- AUTH overlays -->
     <div class="sec off" id="secRegister">
       <div class="auth-stage">
         <div class="auth-card">
           <div class="auth-form">
             <div class="auth-hero">
-              <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <defs>
-                  <linearGradient id="iconKeyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#ffd60a"/>
-                    <stop offset="100%" stop-color="#ff7a00"/>
-                  </linearGradient>
-                </defs>
-                <g stroke="url(#iconKeyGrad)">
+              <div class="auth-hero-logo">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="m21 2-9.6 9.6"/>
                   <circle cx="7.5" cy="15.5" r="5.5"/>
                   <path d="m21 2-3 3 2 2 3-3-2-2"/>
                   <path d="m18 5-2.4 2.4"/>
-                </g>
-              </svg>
+                </svg>
+              </div>
               <div class="auth-hero-title">Активація доступу</div>
-              <div class="auth-hero-sub">Швидко — через Telegram-бот курсу</div>
+              <div class="auth-hero-sub">Введи дані, щоб адміністратор видав код для цього пристрою.</div>
             </div>
 
-            <button class="btn-go btn-primary-large" id="btnQuickLogin">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <button class="btn-go" id="btnQuickLogin">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
                 <path d="M22.05 2.45a1.5 1.5 0 0 0-1.55-.27L2.4 9.04c-1.15.42-1.18 2.04-.04 2.5l4.39 1.74 2.05 6.6c.14.46.46.83.89 1.03.42.2.92.2 1.34-.01.2-.1.39-.22.55-.4l2.71-2.84 4.77 3.51c.27.2.6.32.94.34.93.04 1.74-.62 1.91-1.55l2.7-15.36c.1-.6-.13-1.21-.6-1.6zM9.5 14.7l-.8 2.6-1.7-5.5L18.9 5.4 9.5 14.7z"/>
               </svg>
-              <span>Увійти через Telegram</span>
+              Увійти через Telegram
             </button>
-            <p class="auth-hint">Тицяй — відкриється Traffic Sleng Bot і пришле код у DM.</p>
+            <p class="auth-hint">Тицяй — Traffic Sleng Bot пришле код у DM.</p>
 
             <div class="divider-text">або вручну</div>
 
             <input class="auth-input" id="regName"    type="text" placeholder="Твоє ім'я" autocomplete="off">
             <input class="auth-input" id="regContact" type="text" placeholder="Telegram @username (необов'язково)" autocomplete="off">
             <div class="auth-err" id="regErr"></div>
-            <button class="btn-go btn-secondary" id="btnRegister">Подати запит</button>
-            <p class="auth-hint">Вже є код? <a id="linkHaveCode">Ввести код активації</a></p>
+            <button class="btn-go btn-secondary" id="btnRegister">Відправити заявку</button>
+            <p class="auth-hint">У мене вже є код? <a id="linkHaveCode">Ввести код активації</a></p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ── PENDING (auth-card) ────────────────────────────────────────── -->
     <div class="sec off" id="secPending">
       <div class="auth-stage">
         <div class="auth-card">
           <div class="auth-form">
             <div class="pending-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <defs>
-                  <linearGradient id="iconClockGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%"   stop-color="#ffd60a"/>
-                    <stop offset="100%" stop-color="#ff7a00"/>
-                  </linearGradient>
-                </defs>
-                <g stroke="url(#iconClockGrad)">
-                  <circle cx="12" cy="12" r="9"/>
-                  <path d="M12 7v5l3 1.5"/>
-                </g>
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 7v5l3 1.5"/>
               </svg>
             </div>
             <div style="text-align:center">
               <div class="auth-hero-title">Заявку відправлено</div>
-              <div class="auth-hero-sub">Адміністратор отримає твій Machine ID і видасть код.</div>
+              <div class="auth-hero-sub">Адміністратор отримає Machine ID і видасть код.</div>
             </div>
             <div class="machine-box">
               <div>
-                <div class="machine-label">Твій Machine ID</div>
+                <div class="machine-label">Machine ID</div>
                 <div class="machine-id" id="pendingMid">—</div>
               </div>
               <button class="btn-copy" id="btnCopyMid">Копіювати</button>
             </div>
             <div class="divider-text">Отримав код?</div>
-            <input class="auth-input" id="activationCode" type="text" placeholder="XXXX-XXXX-XXXX" autocomplete="off" style="text-align:center;letter-spacing:.12em;font-size:16px;font-family:var(--font-mono)">
+            <input class="auth-input" id="activationCode" type="text" placeholder="XXXX-XXXX-XXXX" autocomplete="off" style="text-align:center;letter-spacing:.12em;font-family:var(--font-mono);font-size:14px">
             <div class="auth-err" id="actErr"></div>
             <button class="btn-go" id="btnActivate">Активувати</button>
             <p class="auth-hint"><a id="linkReRegister">← Змінити дані реєстрації</a></p>
@@ -1395,267 +970,161 @@ code { font-family: var(--font-mono); }
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════
-         UPLOAD — головний 3-колонковий workspace
-         ═══════════════════════════════════════════════════════════════ -->
-    <div class="sec off" id="secUpload">
+    <!-- MAIN UPLOAD: 2 cards -->
+    <div class="sec off" id="secUpload" style="display:contents">
 
-      <!-- Banner коли немає сервера -->
-      <div style="padding: 14px 18px 0;">
-        <div class="no-server off" id="noServer">
-          ⚠ Інтерфейс відкрито без сервера. Запусти <code>▶ Запустити.bat</code> або <code>python server.py</code>.
+      <div class="no-server off" id="noServer">
+        ⚠ Інтерфейс відкрито без сервера. Запусти <code>▶ Запустити.bat</code> або <code>python server.py</code>.
+      </div>
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title">Відео</div>
+          <div class="card-sub">Додай файл, який потрібно унікалізувати.</div>
         </div>
-      </div>
-
-      <div class="workspace">
-
-        <!-- ────────── LEFT: VIDEO INPUT ─────────── -->
-        <section class="ui-panel">
-          <div class="panel-head">
-            <div class="panel-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 8L12 2 2 8l10 6 10-6z"/><path d="M2 8v8l10 6 10-6V8"/>
-              </svg>
-              Video Input
-            </div>
-            <div class="panel-subtitle">Додай відео, яке потрібно унікалізувати.</div>
+        <div class="card-body">
+          <div class="dz" id="dz" role="button" tabindex="0" aria-label="Зона завантаження відео">
+            <svg class="dz-icon" viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 30V14m0 0l-7 7m7-7l7 7"/>
+              <path d="M6 34a6 6 0 0 0 6 6h20a6 6 0 0 0 6-6"/>
+              <path d="M6 28v6m32-6v6"/>
+            </svg>
+            <span class="dz-main">Перетягни відео сюди</span>
+            <span class="dz-or">або</span>
+            <button class="btn-choose" id="btnChoose" type="button">Обрати відео</button>
+            <input type="file" id="fileInput" accept="video/*" style="display:none">
+            <span class="dz-fmts">MP4 · MOV · AVI · MKV · WEBM</span>
           </div>
-          <div class="panel-body">
-            <!-- Drop zone -->
-            <div class="dz" id="dz" role="button" tabindex="0" aria-label="Зона завантаження відео">
-              <svg class="dz-icon" viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 30V14m0 0l-7 7m7-7l7 7"/>
-                <path d="M6 34a6 6 0 0 0 6 6h20a6 6 0 0 0 6-6"/>
-                <path d="M6 28v6m32-6v6"/>
-              </svg>
-              <span class="dz-main">Перетягни відео сюди</span>
-              <span class="dz-or">або</span>
-              <button class="btn-choose" id="btnChoose" type="button">Обери файл</button>
-              <input type="file" id="fileInput" accept="video/*" style="display:none">
-              <span class="dz-fmts">MP4 · MOV · AVI · MKV · WEBM</span>
-            </div>
 
-            <!-- File card (показується після завантаження) -->
-            <div class="finfo off" id="finfo">
-              <div class="fthumb" id="fthumb">🎞</div>
-              <div class="fdetails">
-                <div class="fname" id="fname">filename.mp4</div>
-                <div class="fmeta" id="fmeta">–</div>
-              </div>
-              <button class="fremove" id="fremove" type="button" aria-label="Видалити файл">✕</button>
+          <div class="finfo off" id="finfo">
+            <div class="fthumb" id="fthumb">🎞</div>
+            <div class="fdetails">
+              <div class="fname" id="fname">filename.mp4</div>
+              <div class="fmeta" id="fmeta">–</div>
             </div>
-
-            <!-- Source details -->
-            <div id="sourceDetails" class="source-details" style="display:none">
-              <div class="sd-cell"><div class="sd-l">Size</div><div class="sd-v" id="sdSize">—</div></div>
-              <div class="sd-cell"><div class="sd-l">Resolution</div><div class="sd-v" id="sdRes">—</div></div>
-              <div class="sd-cell"><div class="sd-l">Duration</div><div class="sd-v" id="sdDur">—</div></div>
-              <div class="sd-cell"><div class="sd-l">Type</div><div class="sd-v" id="sdType">—</div></div>
-            </div>
+            <button class="fremove" id="fremove" type="button" aria-label="Видалити файл">✕</button>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- ────────── CENTER: UNIQUENESS IMPACT ─────────── -->
-        <section class="ui-panel">
-          <div class="panel-head">
-            <div class="panel-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 6-6"/>
-              </svg>
-              Uniqueness Impact
-            </div>
-            <div class="panel-subtitle">Покажи, наскільки сильно буде змінено цифровий відбиток.</div>
-          </div>
-          <div class="panel-body">
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title">Режим обробки</div>
+          <div class="card-sub">Обери силу зміни цифрового відбитку.</div>
+        </div>
+        <div class="card-body">
 
-            <!-- Impact score meter -->
-            <div class="impact-block">
-              <div class="impact-row">
-                <div class="impact-label">Impact score</div>
-                <div class="impact-score" id="impactScore">62%</div>
-              </div>
-              <div class="impact-meter">
-                <div class="impact-meter-fill" id="impactFill" style="width:62%"></div>
-              </div>
-              <div class="impact-mode" id="impactMode">Баланс між якістю і силою унікалізації</div>
-            </div>
-
-            <!-- What will change -->
-            <div class="changes-list">
-              <div class="changes-title">Що буде змінено</div>
-              <div id="changesItems"></div>
-            </div>
-
-            <!-- Preset cards -->
-            <div>
-              <div class="changes-title" style="margin-bottom:8px">Режим унікалізації</div>
-              <div class="preset-grid presets" id="presets">
-                <button class="pbtn preset-card" data-p="stealth" type="button">
-                  <span class="pname">Stealth</span>
-                  <span class="pdesc">Soft · 18%</span>
-                </button>
-                <button class="pbtn preset-card" data-p="light" type="button">
-                  <span class="pname">Light</span>
-                  <span class="pdesc">Clean · 38%</span>
-                </button>
-                <button class="pbtn preset-card on" data-p="medium" type="button">
-                  <span class="pname">Balanced</span>
-                  <span class="pdesc">Recommended · 62%</span>
-                </button>
-                <button class="pbtn preset-card" data-p="hard" type="button">
-                  <span class="pname">Hard</span>
-                  <span class="pdesc">Strong · 86%</span>
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- ────────── RIGHT: SETTINGS & EXPORT ─────────── -->
-        <aside class="ui-panel">
-          <div class="panel-head">
-            <div class="panel-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-              Processing Settings
-            </div>
-            <div class="panel-subtitle">Технічні опції перед запуском.</div>
-          </div>
-          <div class="panel-body" id="advBody">
-            <!-- Toggle: keepAudio -->
-            <div class="setting-card">
-              <div class="setting-card-info">
-                <div class="setting-card-title">Не змінювати аудіо</div>
-                <div class="setting-card-desc">Зберігає оригінальну аудіодоріжку без обробки.</div>
-              </div>
-              <div class="tgl" data-key="keepAudio" role="switch" aria-checked="false"><div class="tgl-dot"></div></div>
-            </div>
-
-            <!-- Toggle: noRotation -->
-            <div class="setting-card">
-              <div class="setting-card-info">
-                <div class="setting-card-title">Вимкнути мікро-поворот кадру</div>
-                <div class="setting-card-desc">Картинка буде максимально стабільною.</div>
-              </div>
-              <div class="tgl" data-key="noRotation" role="switch" aria-checked="false"><div class="tgl-dot"></div></div>
-            </div>
-
-            <!-- Toggle: showHash -->
-            <div class="setting-card">
-              <div class="setting-card-info">
-                <div class="setting-card-title">Показати MD5 до/після</div>
-                <div class="setting-card-desc">Перевірка що файл реально змінився.</div>
-              </div>
-              <div class="tgl" data-key="showHash" role="switch" aria-checked="false"><div class="tgl-dot"></div></div>
-            </div>
-
-            <!-- Output summary -->
-            <div class="summary-card">
-              <div class="summary-row">
-                <span class="summary-l">Файл</span>
-                <span class="summary-v" id="sumFile">Не вибрано</span>
-              </div>
-              <div class="summary-row">
-                <span class="summary-l">Режим</span>
-                <span class="summary-v accent" id="sumPreset">Balanced</span>
-              </div>
-              <div class="summary-row">
-                <span class="summary-l">Mode</span>
-                <span class="summary-v" id="sumMode">Recommended</span>
-              </div>
-              <div class="summary-row">
-                <span class="summary-l">Output</span>
-                <span class="summary-v">MP4</span>
-              </div>
-              <div class="summary-row">
-                <span class="summary-l">Статус</span>
-                <span class="summary-v" id="sumStatus">Очікую файл</span>
-              </div>
-            </div>
-
-            <!-- Primary action -->
-            <button class="primary-action btn-go" id="btnGo" disabled type="button">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
-              </svg>
-              Запустити унікалізацію
+          <div class="presets" id="presets">
+            <button class="pbtn" data-p="stealth" type="button">
+              <span class="pname">Stealth</span>
+              <span class="pdesc">Тільки технічна зміна файлу.</span>
             </button>
-            <div class="action-hint" id="actionHint">Додай відео, щоб запустити обробку.</div>
-
+            <button class="pbtn" data-p="light" type="button">
+              <span class="pname">Light</span>
+              <span class="pdesc">Мʼяка унікалізація без помітного впливу.</span>
+            </button>
+            <button class="pbtn on" data-p="medium" type="button">
+              <span class="pname">Medium</span>
+              <span class="pdesc">Рекомендований баланс для більшості відео.</span>
+            </button>
+            <button class="pbtn" data-p="hard" type="button">
+              <span class="pname">Hard</span>
+              <span class="pdesc">Максимальні зміни цифрового відбитку.</span>
+            </button>
           </div>
-        </aside>
 
-      </div>
+          <div class="impact">
+            <div class="impact-row">
+              <span class="impact-l">Сила унікалізації</span>
+              <span class="impact-v" id="impactScore">62%</span>
+            </div>
+            <div class="impact-bar"><div class="impact-fill" id="impactFill" style="width:62%"></div></div>
+          </div>
 
-      <!-- Hidden alias-кнопка для зворотньої сумісності зі старим JS -->
+          <div>
+            <div class="sec-label">Технічні опції</div>
+            <div class="options-list" id="advBody">
+              <div class="opt-row">
+                <span class="opt-label">Не змінювати аудіо</span>
+                <div class="tgl" data-key="keepAudio" role="switch" aria-checked="false"><div class="tgl-dot"></div></div>
+              </div>
+              <div class="opt-row">
+                <span class="opt-label">Вимкнути мікро-поворот</span>
+                <div class="tgl" data-key="noRotation" role="switch" aria-checked="false"><div class="tgl-dot"></div></div>
+              </div>
+              <div class="opt-row">
+                <span class="opt-label">Показати MD5 до/після</span>
+                <div class="tgl" data-key="showHash" role="switch" aria-checked="false"><div class="tgl-dot"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary">
+            <div class="sum-row">
+              <span class="sum-l">Файл</span>
+              <span class="sum-v" id="sumFile">не вибрано</span>
+            </div>
+            <div class="sum-row">
+              <span class="sum-l">Режим</span>
+              <span class="sum-v accent" id="sumPreset">Medium</span>
+            </div>
+            <div class="sum-row">
+              <span class="sum-l">Статус</span>
+              <span class="sum-v" id="sumStatus">очікує файл</span>
+            </div>
+          </div>
+
+          <button class="primary-btn btn-go" id="btnGo" disabled type="button">Запустити</button>
+          <div class="action-hint" id="actionHint">Спочатку додай відео.</div>
+
+        </div>
+      </section>
+
       <button id="advToggle" style="display:none" aria-hidden="true"></button>
-
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════
-         PROGRESS — status dock
-         ═══════════════════════════════════════════════════════════════ -->
+    <!-- PROCESSING -->
     <div class="sec off" id="secProgress">
-      <div class="status-dock">
-        <div class="dock-head">
-          <div class="dock-title">
-            Обробка відео<span class="dots-anim" id="dots"></span>
+      <div class="body-overlay">
+        <div class="processing-card">
+          <div class="processing-title">Обробка відео<span class="dots-anim" id="dots"></span></div>
+          <div style="display:flex;align-items:baseline;gap:12px;width:100%;justify-content:center">
+            <span style="font-size:36px;font-weight:700;color:var(--yellow);font-family:var(--font-mono);line-height:1" id="progPct">0%</span>
           </div>
-          <div class="dock-pct" id="progPct">0%</div>
+          <div style="width:100%;height:6px;background:rgba(255,255,255,.06);border-radius:100px;overflow:hidden">
+            <div class="prog-fill" id="progFill" style="height:100%"></div>
+          </div>
+          <div class="processing-stage" id="progStage">Підготовка...</div>
+          <button class="btn-ghost" id="btnCancel" type="button" style="width:140px">Скасувати</button>
         </div>
-        <div class="dock-track"><div class="dock-fill prog-fill" id="progFill"></div></div>
-        <div class="dock-stage prog-stage" id="progStage">Підготовка...</div>
-
-        <div class="stage-chips" id="stageChips">
-          <div class="stage-chip" data-stage="upload">Upload</div>
-          <div class="stage-chip" data-stage="analyze">Analyze</div>
-          <div class="stage-chip" data-stage="render">Render</div>
-          <div class="stage-chip" data-stage="verify">Verify</div>
-        </div>
-
-        <div class="dock-actions">
-          <button class="btn-cancel" id="btnCancel" type="button">Скасувати обробку</button>
-        </div>
-      </div>
-
-      <!-- Error card -->
-      <div class="prog-err error-card" id="progErr" style="margin: 0 18px 18px;">
-        <div class="error-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          Обробка зупинилась
-        </div>
-        <div class="error-text">Не вдалося завершити унікалізацію. Перевір файл або спробуй інший режим.</div>
-        <div class="error-tech" id="progErrMsg"></div>
-        <div class="error-actions">
+        <div class="prog-err error-card" id="progErr">
+          <div class="error-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Обробка зупинилась
+          </div>
+          <div class="error-text">Не вдалося завершити унікалізацію. Перевір файл або спробуй інший режим.</div>
+          <div class="error-tech" id="progErrMsg"></div>
           <button class="btn-err-back" id="btnErrBack" type="button">← Повернутись</button>
         </div>
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════
-         RESULT — повна картка успіху
-         ═══════════════════════════════════════════════════════════════ -->
+    <!-- RESULT -->
     <div class="sec off" id="secResult">
-      <div class="result-card">
-        <div class="res-wrap">
+      <div class="body-overlay">
+        <div class="result-card-inner res-wrap">
           <svg class="ck" viewBox="0 0 64 64" fill="none">
-            <circle class="ck-c" cx="32" cy="32" r="30" stroke="rgba(44,229,123,.85)" stroke-width="2"/>
-            <path class="ck-p" d="M18 33 l9 9 l19-19" stroke="rgba(44,229,123,.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle class="ck-c" cx="32" cy="32" r="30" stroke="rgba(53,208,127,.85)" stroke-width="2"/>
+            <path class="ck-p" d="M18 33 l9 9 l19-19" stroke="rgba(53,208,127,.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <div class="res-title">Відео готове</div>
-          <div class="res-sub">Файл успішно оброблено і отримав новий цифровий відбиток.</div>
-
-          <div class="res-stats" style="width:100%;display:flex;justify-content:center">
-            <div class="stats-grid n4" id="statsGrid"></div>
-          </div>
-
+          <div class="res-title">Готово</div>
+          <div class="res-sub">Файл отримав новий цифровий відбиток.</div>
+          <div class="stats-grid n4" id="statsGrid"></div>
           <div class="result-actions">
             <button class="btn-dl" id="btnDownload" type="button">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3v13m0 0l-5-5m5 5l5-5"/><path d="M3 20h18"/>
               </svg>
               Завантажити відео
@@ -1667,18 +1136,51 @@ code { font-family: var(--font-mono); }
       </div>
     </div>
 
-  </div><!-- /.workspace-wrap -->
+  </main>
 
-</div><!-- /.app-shell -->
+  <!-- STATUS FOOTER -->
+  <footer class="app-status">
+    <span class="footer-label" id="footerLabel">Готово до роботи</span>
+    <div class="footer-track" id="footerTrack" style="display:none">
+      <div class="footer-fill"></div>
+    </div>
+    <span class="footer-pct" id="footerPct" style="display:none">0%</span>
+    <button class="footer-cancel" id="footerCancel" type="button" style="display:none">Скасувати</button>
+    <span class="footer-meta">Режим: <span style="color:var(--yellow);font-weight:700" id="footerPreset">Medium</span></span>
+  </footer>
+
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
-     ADMIN OVERLAY (command-modal)
+     CUSTOM MODAL (для info-діалогів типу Help)
      ═══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay off" id="modalOverlay">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div class="modal-icon" id="modalIcon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div class="modal-title" id="modalTitle">Інформація</div>
+      <button class="modal-close" id="modalClose" type="button" aria-label="Закрити">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="modal-btn primary" id="modalOk" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast-stack (snack-notifications) -->
+<div class="toast-stack" id="toastStack"></div>
+
+<!-- ADMIN OVERLAY -->
 <div class="admin-overlay off" id="adminOverlay">
   <div class="admin-panel">
     <div class="admin-hdr">
       <div class="admin-title">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
         Admin Access
@@ -1697,7 +1199,7 @@ code { font-family: var(--font-mono); }
       </div>
     </div>
 
-    <div id="adminTools" style="display:none;flex-direction:column;gap:18px">
+    <div id="adminTools" style="display:none;flex-direction:column;gap:16px">
       <div class="admin-section">
         <div class="admin-section-title">Активувати цей пристрій</div>
         <div class="machine-box">
@@ -1714,7 +1216,7 @@ code { font-family: var(--font-mono); }
       <div class="admin-section">
         <div class="admin-section-title">Згенерувати код для учня</div>
         <div class="inline-row">
-          <input class="auth-input" id="adminStudentMid" type="text" placeholder="Machine ID учня" autocomplete="off" style="letter-spacing:.04em;font-family:var(--font-mono)">
+          <input class="auth-input" id="adminStudentMid" type="text" placeholder="Machine ID учня" autocomplete="off" style="font-family:var(--font-mono);letter-spacing:.04em">
           <button class="btn-sm btn-sm-blue" id="btnGenCode" type="button">Генерувати</button>
         </div>
         <div id="adminCodeResult" style="display:none">
@@ -1732,9 +1234,6 @@ code { font-family: var(--font-mono); }
 <script>
 'use strict';
 
-/* ═══════════════════════════════════════════════════════════════════════
-   STATE
-   ═══════════════════════════════════════════════════════════════════════ */
 const S = {
   file: null, videoInfo: null,
   preset: 'medium',
@@ -1745,135 +1244,141 @@ const S = {
   adminPassword: '',
 };
 
-/* PRESET → UX-метадані (frontend mapping, не змінює backend preset names) */
 const PRESET_UI = {
-  stealth: {
-    label: 'Stealth', mode: 'Soft', score: 18,
-    desc: 'Технічна зміна без видимого впливу',
-    changes: ['Очищення метаданих', 'Реструктуризація бітстріму', 'Зміна кодек-fingerprint'],
-  },
-  light: {
-    label: 'Light', mode: 'Clean', score: 38,
-    desc: 'Мʼякі зміни для чистого результату',
-    changes: ['Очищення метаданих', 'Легкий піксельний шум', 'Зсув кольору', 'Мікро-зсув аудіо'],
-  },
-  medium: {
-    label: 'Balanced', mode: 'Recommended', score: 62,
-    desc: 'Баланс між якістю і силою унікалізації',
-    changes: ['Очищення метаданих', 'Піксельний шум', 'Зсув кольору і гами', 'Мікро-кроп', 'Мікро-поворот', 'Зсув аудіо-fingerprint'],
-  },
-  hard: {
-    label: 'Hard', mode: 'Strong', score: 86,
-    desc: 'Максимальний вплив на цифровий відбиток',
-    changes: ['Посилений піксельний шум', 'Кроп і поворот', 'Піксельний зсув', 'Зсув пітча і шум аудіо', 'Перебудова структури кодеку'],
-  },
+  stealth: { label: 'Stealth', score: 18 },
+  light:   { label: 'Light',   score: 38 },
+  medium:  { label: 'Medium',  score: 62 },
+  hard:    { label: 'Hard',    score: 86 },
 };
 
-/* ═══════════════════════════════════════════════════════════════════════
-   DOM REFERENCES
-   ═══════════════════════════════════════════════════════════════════════ */
-const $  = id => document.getElementById(id);
-const panel       = $('panel');
-const dz          = $('dz');
-const fileInput   = $('fileInput');
-const btnChoose   = $('btnChoose');
-const finfo       = $('finfo');
-const fthumb      = $('fthumb');
-const fname       = $('fname');
-const fmeta       = $('fmeta');
-const fremove     = $('fremove');
-const presetsEl   = $('presets');
-const advToggle   = $('advToggle');
-const advBody     = $('advBody');
-const btnGo       = $('btnGo');
-const secUpload   = $('secUpload');
-const secProgress = $('secProgress');
-const secResult   = $('secResult');
-const dots        = $('dots');
-const progPct     = $('progPct');
-const progFill    = $('progFill');
-const progStage   = $('progStage');
-const btnCancel   = $('btnCancel');
-const progErr     = $('progErr');
-const progErrMsg  = $('progErrMsg');
-const btnErrBack  = $('btnErrBack');
-const statsGrid   = $('statsGrid');
-const btnDownload = $('btnDownload');
-const btnAgain    = $('btnAgain');
-const noServer    = $('noServer');
+const $ = id => document.getElementById(id);
+const panel        = $('panel');
+const dz           = $('dz');
+const fileInput    = $('fileInput');
+const btnChoose    = $('btnChoose');
+const finfo        = $('finfo');
+const fthumb       = $('fthumb');
+const fname        = $('fname');
+const fmeta        = $('fmeta');
+const fremove      = $('fremove');
+const presetsEl    = $('presets');
+const advToggle    = $('advToggle');
+const advBody      = $('advBody');
+const btnGo        = $('btnGo');
+const secUpload    = $('secUpload');
+const secProgress  = $('secProgress');
+const secResult    = $('secResult');
+const dots         = $('dots');
+const progPct      = $('progPct');
+const progFill     = $('progFill');
+const progStage    = $('progStage');
+const btnCancel    = $('btnCancel');
+const progErr      = $('progErr');
+const progErrMsg   = $('progErrMsg');
+const btnErrBack   = $('btnErrBack');
+const statsGrid    = $('statsGrid');
+const btnDownload  = $('btnDownload');
+const btnAgain     = $('btnAgain');
+const noServer     = $('noServer');
 
-/* Auth */
-const secRegister    = $('secRegister');
-const secPending     = $('secPending');
-const regName        = $('regName');
-const regContact     = $('regContact');
-const regErr         = $('regErr');
-const btnRegister    = $('btnRegister');
-const linkHaveCode   = $('linkHaveCode');
-const linkReRegister = $('linkReRegister');
-const pendingMid     = $('pendingMid');
-const btnCopyMid     = $('btnCopyMid');
-const activationCode = $('activationCode');
-const actErr         = $('actErr');
-const btnActivate    = $('btnActivate');
+const secRegister     = $('secRegister');
+const secPending      = $('secPending');
+const regName         = $('regName');
+const regContact      = $('regContact');
+const regErr          = $('regErr');
+const btnRegister     = $('btnRegister');
+const linkHaveCode    = $('linkHaveCode');
+const linkReRegister  = $('linkReRegister');
+const pendingMid      = $('pendingMid');
+const btnCopyMid      = $('btnCopyMid');
+const activationCode  = $('activationCode');
+const actErr          = $('actErr');
+const btnActivate     = $('btnActivate');
 
-/* Admin */
-const adminOverlay      = $('adminOverlay');
-const adminLogin        = $('adminLogin');
-const adminTools        = $('adminTools');
-const adminPassInput    = $('adminPassInput');
-const btnAdminLogin     = $('btnAdminLogin');
-const adminLoginErr     = $('adminLoginErr');
-const adminMyMid        = $('adminMyMid');
-const btnActivateSelf   = $('btnActivateSelf');
-const adminStudentMid   = $('adminStudentMid');
-const btnGenCode        = $('btnGenCode');
-const adminCodeResult   = $('adminCodeResult');
+const adminOverlay       = $('adminOverlay');
+const adminLogin         = $('adminLogin');
+const adminTools         = $('adminTools');
+const adminPassInput     = $('adminPassInput');
+const btnAdminLogin      = $('btnAdminLogin');
+const adminLoginErr      = $('adminLoginErr');
+const adminMyMid         = $('adminMyMid');
+const btnActivateSelf    = $('btnActivateSelf');
+const adminStudentMid    = $('adminStudentMid');
+const btnGenCode         = $('btnGenCode');
+const adminCodeResult    = $('adminCodeResult');
 const adminGeneratedCode = $('adminGeneratedCode');
-const btnCopyCode       = $('btnCopyCode');
-const adminGenErr       = $('adminGenErr');
-const btnCloseAdmin     = $('btnCloseAdmin');
+const btnCopyCode        = $('btnCopyCode');
+const adminGenErr        = $('adminGenErr');
+const btnCloseAdmin      = $('btnCloseAdmin');
 
-/* Header status / impact / summary */
-const statusPresetName = $('statusPresetName');
+const topbarStatusDot  = $('topbarStatusDot');
+const topbarStatusText = $('topbarStatusText');
 const impactScore      = $('impactScore');
 const impactFill       = $('impactFill');
-const impactMode       = $('impactMode');
-const changesItems     = $('changesItems');
 const sumFile          = $('sumFile');
 const sumPreset        = $('sumPreset');
-const sumMode          = $('sumMode');
 const sumStatus        = $('sumStatus');
 const actionHint       = $('actionHint');
-const sourceDetails    = $('sourceDetails');
-const sdSize           = $('sdSize');
-const sdRes            = $('sdRes');
-const sdDur            = $('sdDur');
-const sdType           = $('sdType');
-const stageChips       = $('stageChips');
+const footerLabel      = $('footerLabel');
+const footerTrack      = $('footerTrack');
+const footerFill       = footerTrack?.querySelector('.footer-fill');
+const footerPct        = $('footerPct');
+const footerCancel     = $('footerCancel');
+const footerPreset     = $('footerPreset');
 const resultMeta       = $('resultMeta');
 
 const ALL_SECS = () => [secRegister, secPending, secUpload, secProgress, secResult];
 
 /* ═══════════════════════════════════════════════════════════════════════
-   AUTH INIT
+   CUSTOM MODAL / TOAST (native alert→ власні UI-компоненти)
    ═══════════════════════════════════════════════════════════════════════ */
+const modalOverlay = $('modalOverlay');
+const modalTitle   = $('modalTitle');
+const modalBody    = $('modalBody');
+const modalOk      = $('modalOk');
+const modalClose   = $('modalClose');
+const toastStack   = $('toastStack');
+
+function showModal(title, bodyHtml) {
+  modalTitle.textContent = title;
+  modalBody.innerHTML = bodyHtml;
+  modalOverlay.classList.remove('off');
+  setTimeout(() => modalOk?.focus(), 60);
+}
+function hideModal() { modalOverlay.classList.add('off'); }
+modalOk?.addEventListener('click', hideModal);
+modalClose?.addEventListener('click', hideModal);
+modalOverlay?.addEventListener('click', e => { if (e.target === modalOverlay) hideModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !modalOverlay.classList.contains('off')) hideModal();
+});
+
+function showToast(text, kind /* 'ok' | 'err' | '' */, ttl = 3200) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (kind ? ' ' + kind : '');
+  const iconSvg = kind === 'err'
+    ? '<svg class="toast-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+    : kind === 'ok'
+    ? '<svg class="toast-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    : '<svg class="toast-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+  t.innerHTML = iconSvg + `<span class="toast-text">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`;
+  toastStack.appendChild(t);
+  setTimeout(() => {
+    t.classList.add('leave');
+    t.addEventListener('animationend', () => t.remove(), { once: true });
+  }, ttl);
+}
+
+/* AUTH */
 async function initAuth() {
   if (location.protocol === 'file:') { showMainApp(); return; }
   try {
     const r = await fetch('/api/auth/status');
     const d = await r.json();
-    if (d.activated) {
-      showMainApp();
-    } else if (d.registered) {
-      pendingMid.textContent = d.machine_id || '—';
-      switchToAuth(secPending);
-    } else {
-      switchToAuth(secRegister);
-    }
-  } catch {
-    showMainApp();
-  }
+    if (d.activated) showMainApp();
+    else if (d.registered) { pendingMid.textContent = d.machine_id || '—'; switchToAuth(secPending); }
+    else switchToAuth(secRegister);
+  } catch { showMainApp(); }
 }
 
 function showMainApp() {
@@ -1883,8 +1388,9 @@ function showMainApp() {
     noServer.classList.remove('off');
     btnGo.disabled = true;
   }
-  updatePresetUI();
-  updateOutputSummary();
+  updatePresetInfo();
+  updateSummary();
+  setDesktopStatus('Ready', 'ok');
 }
 
 function switchToAuth(sec) {
@@ -1894,63 +1400,36 @@ function switchToAuth(sec) {
   sec.addEventListener('animationend', () => sec.classList.remove('enter'), { once: true });
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   QUICK LOGIN via Telegram deep-link
-   ═══════════════════════════════════════════════════════════════════════ */
 const TELEGRAM_BOT_USERNAME = 'tst_education_bot';
-
 $('btnQuickLogin')?.addEventListener('click', async () => {
   let mid = '';
-  try {
-    const r = await fetch('/api/auth/status');
-    const d = await r.json();
-    mid = d.machine_id || '';
-  } catch {}
-  if (!mid) {
-    alert('Не вдалось отримати Machine ID — переконайся що сервер запущений');
-    return;
-  }
+  try { const r = await fetch('/api/auth/status'); const d = await r.json(); mid = d.machine_id || ''; } catch {}
+  if (!mid) { showToast('Не вдалось отримати Machine ID. Перевір що сервер запущений.', 'err'); return; }
   const url = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=uniq_${encodeURIComponent(mid)}`;
-  if (window.electronAPI?.openExternal) {
-    window.electronAPI.openExternal(url);
-  } else {
-    window.open(url, '_blank');
-  }
+  if (window.electronAPI?.openExternal) window.electronAPI.openExternal(url);
+  else window.open(url, '_blank');
   pendingMid.textContent = mid;
   switchToAuth(secPending);
 });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   REGISTER
-   ═══════════════════════════════════════════════════════════════════════ */
 btnRegister?.addEventListener('click', async () => {
-  const name    = regName.value.trim();
+  const name = regName.value.trim();
   const contact = regContact.value.trim();
   regErr.classList.remove('show');
   regName.classList.remove('err');
   if (!name) { regName.classList.add('err'); showAuthErr(regErr, "Введіть ваше ім'я"); return; }
-
   btnRegister.disabled = true;
   btnRegister.textContent = 'Відправляємо…';
   try {
     const r = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, contact }),
     });
     const d = await r.json();
-    if (d.ok) {
-      pendingMid.textContent = d.machine_id || '—';
-      switchToAuth(secPending);
-    } else {
-      showAuthErr(regErr, d.error || 'Помилка сервера');
-    }
-  } catch {
-    showAuthErr(regErr, 'Сервер недоступний');
-  } finally {
-    btnRegister.disabled = false;
-    btnRegister.textContent = 'Подати запит';
-  }
+    if (d.ok) { pendingMid.textContent = d.machine_id || '—'; switchToAuth(secPending); }
+    else showAuthErr(regErr, d.error || 'Помилка сервера');
+  } catch { showAuthErr(regErr, 'Сервер недоступний'); }
+  finally { btnRegister.disabled = false; btnRegister.textContent = 'Відправити заявку'; }
 });
 
 linkHaveCode?.addEventListener('click', () => {
@@ -1960,10 +1439,8 @@ linkHaveCode?.addEventListener('click', () => {
     if (d.machine_id) pendingMid.textContent = d.machine_id;
   }).catch(()=>{});
 });
-
 linkReRegister?.addEventListener('click', () => switchToAuth(secRegister));
 
-/* Copy Machine ID */
 btnCopyMid?.addEventListener('click', () => {
   navigator.clipboard.writeText(pendingMid.textContent).then(() => {
     btnCopyMid.textContent = '✓ Скопійовано';
@@ -1972,47 +1449,30 @@ btnCopyMid?.addEventListener('click', () => {
   });
 });
 
-/* Activate */
 btnActivate?.addEventListener('click', activateWithCode);
 activationCode?.addEventListener('keydown', e => { if (e.key === 'Enter') activateWithCode(); });
-
 async function activateWithCode() {
   const code = activationCode.value.trim();
   actErr.classList.remove('show');
   activationCode.classList.remove('err');
   if (!code) { activationCode.classList.add('err'); showAuthErr(actErr, 'Введіть код активації'); return; }
-
   btnActivate.disabled = true;
   btnActivate.textContent = 'Перевіряємо…';
   try {
     const r = await fetch('/api/auth/activate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code }),
     });
     const d = await r.json();
-    if (d.ok) {
-      showMainApp();
-    } else {
-      activationCode.classList.add('err');
-      showAuthErr(actErr, d.error || 'Невірний код');
-    }
-  } catch {
-    showAuthErr(actErr, 'Сервер недоступний');
-  } finally {
-    btnActivate.disabled = false;
-    btnActivate.textContent = 'Активувати';
-  }
+    if (d.ok) showMainApp();
+    else { activationCode.classList.add('err'); showAuthErr(actErr, d.error || 'Невірний код'); }
+  } catch { showAuthErr(actErr, 'Сервер недоступний'); }
+  finally { btnActivate.disabled = false; btnActivate.textContent = 'Активувати'; }
 }
 
-function showAuthErr(el, msg) {
-  el.textContent = msg;
-  el.classList.add('show');
-}
+function showAuthErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   ADMIN OVERLAY (Ctrl+Shift+A, 5 кліків по лого, кнопка в header)
-   ═══════════════════════════════════════════════════════════════════════ */
+/* ADMIN */
 document.addEventListener('keydown', e => {
   if (e.ctrlKey && e.shiftKey && (e.code === 'KeyA' || e.key.toUpperCase() === 'A')) {
     e.preventDefault();
@@ -2020,9 +1480,8 @@ document.addEventListener('keydown', e => {
   }
 });
 
-/* 5 кліків по лого (null-safe) */
 let _iconClicks = 0, _iconTimer = null;
-const _logoEl = document.querySelector('.hdr-logo, .brand-mark');
+const _logoEl = document.querySelector('.hdr-logo, .brand');
 if (_logoEl) {
   _logoEl.addEventListener('click', () => {
     _iconClicks++;
@@ -2032,7 +1491,6 @@ if (_logoEl) {
   });
 }
 
-/* Кнопка в header */
 $('btnAdminTrigger')?.addEventListener('click', openAdminOverlay);
 
 function openAdminOverlay() {
@@ -2040,14 +1498,8 @@ function openAdminOverlay() {
   fetch('/api/auth/status').then(r=>r.json()).then(d=>{
     if (d.machine_id) adminMyMid.textContent = d.machine_id;
   }).catch(()=>{});
-  if (S.adminAuthed) {
-    adminLogin.style.display = 'none';
-    adminTools.style.display = 'flex';
-  } else {
-    adminLogin.style.display = '';
-    adminTools.style.display = 'none';
-    setTimeout(() => adminPassInput.focus(), 80);
-  }
+  if (S.adminAuthed) { adminLogin.style.display = 'none'; adminTools.style.display = 'flex'; }
+  else { adminLogin.style.display = ''; adminTools.style.display = 'none'; setTimeout(() => adminPassInput.focus(), 80); }
 }
 
 btnCloseAdmin?.addEventListener('click', () => adminOverlay.classList.add('off'));
@@ -2055,29 +1507,22 @@ adminOverlay?.addEventListener('click', e => { if (e.target === adminOverlay) ad
 
 btnAdminLogin?.addEventListener('click', adminLogin_submit);
 adminPassInput?.addEventListener('keydown', e => { if (e.key === 'Enter') adminLogin_submit(); });
-
 async function adminLogin_submit() {
   const pass = adminPassInput.value;
   adminLoginErr.classList.remove('show');
   if (!pass) return;
   try {
     const r = await fetch('/api/admin/generate-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: pass, machine_id: 'TEST-TEST-TEST' }),
     });
-    if (r.status === 403) {
-      showAuthErr(adminLoginErr, 'Невірний пароль');
-      return;
-    }
+    if (r.status === 403) { showAuthErr(adminLoginErr, 'Невірний пароль'); return; }
     S.adminAuthed = true;
     S.adminPassword = pass;
     adminPassInput.value = '';
     adminLogin.style.display = 'none';
     adminTools.style.display = 'flex';
-  } catch {
-    showAuthErr(adminLoginErr, 'Сервер недоступний');
-  }
+  } catch { showAuthErr(adminLoginErr, 'Сервер недоступний'); }
 }
 
 btnActivateSelf?.addEventListener('click', async () => {
@@ -2085,29 +1530,23 @@ btnActivateSelf?.addEventListener('click', async () => {
   if (!mid || mid === '—') return;
   try {
     const r = await fetch('/api/admin/generate-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: S.adminPassword, machine_id: mid }),
     });
     const d = await r.json();
     if (d.code) {
       const r2 = await fetch('/api/auth/activate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: d.code }),
       });
       const d2 = await r2.json();
-      if (d2.ok) {
-        adminOverlay.classList.add('off');
-        showMainApp();
-      }
+      if (d2.ok) { adminOverlay.classList.add('off'); showMainApp(); }
     }
   } catch {}
 });
 
 btnGenCode?.addEventListener('click', generateStudentCode);
 adminStudentMid?.addEventListener('keydown', e => { if (e.key === 'Enter') generateStudentCode(); });
-
 async function generateStudentCode() {
   const mid = adminStudentMid.value.trim();
   adminGenErr.classList.remove('show');
@@ -2115,8 +1554,7 @@ async function generateStudentCode() {
   if (!mid) { showAuthErr(adminGenErr, 'Введіть Machine ID'); return; }
   try {
     const r = await fetch('/api/admin/generate-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: S.adminPassword, machine_id: mid }),
     });
     const d = await r.json();
@@ -2125,12 +1563,8 @@ async function generateStudentCode() {
       adminCodeResult.style.display = 'block';
       btnCopyCode.textContent = 'Копіювати';
       btnCopyCode.classList.remove('copied');
-    } else {
-      showAuthErr(adminGenErr, d.error || 'Помилка');
-    }
-  } catch {
-    showAuthErr(adminGenErr, 'Сервер недоступний');
-  }
+    } else showAuthErr(adminGenErr, d.error || 'Помилка');
+  } catch { showAuthErr(adminGenErr, 'Сервер недоступний'); }
 }
 
 btnCopyCode?.addEventListener('click', () => {
@@ -2141,17 +1575,27 @@ btnCopyCode?.addEventListener('click', () => {
   });
 });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   NO-SERVER guard
-   ═══════════════════════════════════════════════════════════════════════ */
+$('btnHelp')?.addEventListener('click', () => {
+  showModal('Sleng Uniquifier — швидкий гайд', `
+    <ol>
+      <li>Перетягни відео у ліву картку <strong>«Відео»</strong></li>
+      <li>Обери режим у правій картці <strong>«Режим обробки»</strong></li>
+      <li>(Опційно) увімкни технічні опції під списком пресетів</li>
+      <li>Тицяй жовту кнопку <strong>«Запустити»</strong> внизу</li>
+    </ol>
+    <p style="margin-top:12px;color:var(--text-muted);font-size:11.5px">Гарячі клавіші:</p>
+    <ul style="list-style:none;padding-left:0">
+      <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd> — Admin-панель</li>
+      <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd> — DevTools</li>
+    </ul>
+  `);
+});
+
 if (location.protocol === 'file:' || !location.hostname) {
   noServer.classList.remove('off');
   btnGo.disabled = true;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   SECTION TRANSITIONS
-   ═══════════════════════════════════════════════════════════════════════ */
 function switchTo(next) {
   const appSecs = [secUpload, secProgress, secResult];
   const cur = appSecs.find(s => !s.classList.contains('off'));
@@ -2166,9 +1610,6 @@ function show(el) {
   el.addEventListener('animationend', () => el.classList.remove('enter'), { once: true });
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   DRAG & DROP
-   ═══════════════════════════════════════════════════════════════════════ */
 ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
 ['dragleave','dragend'].forEach(ev => dz.addEventListener(ev, () => dz.classList.remove('over')));
 dz.addEventListener('drop', e => {
@@ -2181,9 +1622,6 @@ dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.prev
 btnChoose.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); fileInput.value=''; });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   FILE HANDLING
-   ═══════════════════════════════════════════════════════════════════════ */
 async function handleFile(file) {
   if (location.protocol === 'file:') return;
   S.file = file;
@@ -2192,15 +1630,10 @@ async function handleFile(file) {
   fthumb.innerHTML = ''; fthumb.textContent = '🎞';
   finfo.classList.remove('off');
   btnGo.disabled = false;
-
   const info = await getVideoMeta(file);
   if (info) {
     S.videoInfo = info;
-    const parts = [
-      fmtBytes(file.size),
-      info.w && info.h ? `${info.w}×${info.h}` : '',
-      info.dur ? fmtDur(info.dur) : '',
-    ].filter(Boolean);
+    const parts = [fmtBytes(file.size), info.w && info.h ? `${info.w}×${info.h}` : '', info.dur ? fmtDur(info.dur) : ''].filter(Boolean);
     fmeta.textContent = parts.join(' · ');
     if (info.thumb) {
       const img = document.createElement('img');
@@ -2209,8 +1642,7 @@ async function handleFile(file) {
       fthumb.appendChild(img);
     }
   }
-  updateSourceDetails();
-  updateOutputSummary();
+  updateSummary();
 }
 
 async function getVideoMeta(file) {
@@ -2241,147 +1673,74 @@ fremove.addEventListener('click', e => {
   e.stopPropagation();
   S.file = null; S.videoInfo = null;
   finfo.classList.add('off');
-  if (sourceDetails) sourceDetails.style.display = 'none';
   btnGo.disabled = true;
-  updateOutputSummary();
+  updateSummary();
 });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   PRESETS
-   ═══════════════════════════════════════════════════════════════════════ */
 presetsEl.addEventListener('click', e => {
   const b = e.target.closest('.pbtn'); if (!b) return;
   presetsEl.querySelectorAll('.pbtn').forEach(x => x.classList.remove('on'));
   b.classList.add('on'); S.preset = b.dataset.p;
-  updatePresetUI();
-  updateOutputSummary();
+  updatePresetInfo();
+  updateSummary();
 });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   TOGGLES
-   ═══════════════════════════════════════════════════════════════════════ */
 document.querySelectorAll('.tgl').forEach(t => {
   t.addEventListener('click', () => {
     const on = t.classList.toggle('on');
     t.setAttribute('aria-checked', on ? 'true' : 'false');
     S[t.dataset.key] = on;
-    updateOutputSummary();
+    updateSummary();
   });
 });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   UI UPDATERS
-   ═══════════════════════════════════════════════════════════════════════ */
-function updatePresetUI() {
+function updatePresetInfo() {
   const ui = PRESET_UI[S.preset] || PRESET_UI.medium;
-
-  /* Impact block */
-  if (impactScore) impactScore.textContent = ui.score + '%';
-  if (impactFill)  impactFill.style.width  = ui.score + '%';
-  if (impactMode)  impactMode.textContent  = ui.desc;
-
-  /* Changes list */
-  if (changesItems) {
-    changesItems.innerHTML = ui.changes.map(c => `
-      <div class="change-item">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-        <span>${c}</span>
-      </div>
-    `).join('');
-  }
-
-  /* Header status */
-  if (statusPresetName) statusPresetName.textContent = ui.label;
-
-  /* Mark active preset card (на випадок якщо .on не виставлений раніше) */
-  if (presetsEl) {
-    presetsEl.querySelectorAll('.pbtn').forEach(b => {
-      b.classList.toggle('on', b.dataset.p === S.preset);
-    });
-  }
+  if (impactScore)  impactScore.textContent = ui.score + '%';
+  if (impactFill)   impactFill.style.width  = ui.score + '%';
+  if (footerPreset) footerPreset.textContent = ui.label;
+  presetsEl?.querySelectorAll('.pbtn').forEach(b => b.classList.toggle('on', b.dataset.p === S.preset));
 }
 
-function updateOutputSummary() {
+function updateSummary() {
   const ui = PRESET_UI[S.preset] || PRESET_UI.medium;
   const hasFile = !!S.file;
-
-  if (sumFile)    sumFile.textContent    = hasFile ? (S.file.name.length > 24 ? S.file.name.slice(0, 22) + '…' : S.file.name) : 'Не вибрано';
-  if (sumPreset)  sumPreset.textContent  = ui.label;
-  if (sumMode)    sumMode.textContent    = ui.mode;
+  if (sumFile)   sumFile.textContent   = hasFile ? (S.file.name.length > 26 ? S.file.name.slice(0, 24) + '…' : S.file.name) : 'не вибрано';
+  if (sumPreset) sumPreset.textContent = ui.label;
   if (sumStatus) {
-    sumStatus.textContent = hasFile ? 'Готово' : 'Очікую файл';
-    sumStatus.className = 'summary-v' + (hasFile ? ' success' : '');
+    sumStatus.textContent = hasFile ? 'готово' : 'очікує файл';
+    sumStatus.className = 'sum-v' + (hasFile ? ' success' : '');
   }
-
-  /* btnGo state + hint */
   if (btnGo) btnGo.disabled = !hasFile;
   if (actionHint) {
-    if (hasFile) {
-      actionHint.textContent = 'Готово до обробки.';
-      actionHint.classList.add('ready');
-    } else {
-      actionHint.textContent = 'Додай відео, щоб запустити обробку.';
-      actionHint.classList.remove('ready');
-    }
+    if (hasFile) { actionHint.textContent = 'Готово до обробки.'; actionHint.classList.add('ready'); }
+    else         { actionHint.textContent = 'Спочатку додай відео.'; actionHint.classList.remove('ready'); }
   }
 }
 
-function updateSourceDetails() {
-  if (!sourceDetails) return;
-  const f = S.file, v = S.videoInfo;
-  if (!f) { sourceDetails.style.display = 'none'; return; }
-  sourceDetails.style.display = '';
-  sdSize.textContent = fmtBytes(f.size);
-  sdRes.textContent  = (v && v.w && v.h) ? `${v.w}×${v.h}` : '—';
-  sdDur.textContent  = (v && v.dur) ? fmtDur(v.dur) : '—';
-  sdType.textContent = (f.type || '—').replace('video/', '').toUpperCase();
+function setDesktopStatus(text, kind) {
+  if (topbarStatusText) topbarStatusText.textContent = text;
+  if (topbarStatusDot)  topbarStatusDot.className = 'status-dot' + (kind === 'warn' || kind === 'busy' ? ' warn' : kind === 'err' ? ' err' : '');
 }
 
-function updateProcessingStages(percent) {
-  if (!stageChips) return;
-  const chips = stageChips.querySelectorAll('.stage-chip');
-  /* 0-5 Upload | 6-15 Analyze | 16-95 Render | 96-100 Verify/Done */
-  const stages = [
-    { from: 0,  to: 5,   name: 'upload'  },
-    { from: 6,  to: 15,  name: 'analyze' },
-    { from: 16, to: 95,  name: 'render'  },
-    { from: 96, to: 100, name: 'verify'  },
-  ];
-  chips.forEach(c => { c.classList.remove('active', 'done'); });
-  for (let i = 0; i < stages.length; i++) {
-    const st = stages[i];
-    const chip = chips[i];
-    if (!chip) continue;
-    if (percent > st.to) chip.classList.add('done');
-    else if (percent >= st.from) chip.classList.add('active');
+function updateFooterProgress(visible, pct, stage) {
+  if (!footerTrack) return;
+  if (visible) {
+    footerTrack.style.display = '';
+    footerPct.style.display   = '';
+    footerCancel.style.display = '';
+    if (footerFill) footerFill.style.width = (pct || 0) + '%';
+    footerPct.textContent = (pct || 0) + '%';
+    footerLabel.textContent = stage || 'Обробка...';
+  } else {
+    footerTrack.style.display = 'none';
+    footerPct.style.display   = 'none';
+    footerCancel.style.display = 'none';
+    footerLabel.textContent = 'Готово до роботи';
   }
 }
+footerCancel?.addEventListener('click', () => btnCancel?.click());
 
-function setAppBusy(isBusy) {
-  /* Можна додати disable interactions, не критично */
-  document.body.classList.toggle('busy', !!isBusy);
-}
-
-/* Header help button */
-$('btnHelp')?.addEventListener('click', () => {
-  alert(
-    'Sleng Uniq Studio — швидкий гайд:\n\n' +
-    '1. Перетягни відео у Video Input\n' +
-    '2. Обери режим унікалізації\n' +
-    '3. (Опціонально) налаштуй технічні опції\n' +
-    '4. Тицяй «Запустити унікалізацію»\n\n' +
-    'Гарячі клавіші:\n' +
-    '  Ctrl+Shift+A — Admin\n' +
-    '  F11 — Fullscreen\n' +
-    '  Ctrl+Shift+I — DevTools'
-  );
-});
-
-/* ═══════════════════════════════════════════════════════════════════════
-   START PROCESSING
-   ═══════════════════════════════════════════════════════════════════════ */
 btnGo.addEventListener('click', () => {
   if (!S.file) return;
   progErr.classList.remove('show');
@@ -2389,9 +1748,9 @@ btnGo.addEventListener('click', () => {
   progFill.classList.remove('done');
   progPct.textContent  = '0%';
   progStage.textContent = 'Завантаження файлу...';
-  updateProcessingStages(0);
+  setDesktopStatus('Processing', 'busy');
+  updateFooterProgress(true, 0, 'Завантаження файлу...');
   switchTo(secProgress);
-  setAppBusy(true);
   startDots();
   uploadFile();
 });
@@ -2404,32 +1763,23 @@ function uploadFile() {
     noRotation: S.noRotation,
     showHash:   S.showHash,
   });
-
   const xhr = new XMLHttpRequest();
   S.xhr = xhr;
   xhr.open('POST', `/process?${params}`);
   xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-
   xhr.upload.onprogress = e => {
     if (e.lengthComputable) {
       const pct = Math.round(e.loaded / e.total * 5);
       setProgress(pct, 'Завантаження файлу...');
     }
   };
-
   xhr.onload = () => {
     S.xhr = null;
     if (xhr.status === 200) {
-      try {
-        const { job_id } = JSON.parse(xhr.responseText);
-        S.jobId = job_id;
-        connectSSE(job_id);
-      } catch { showError('Помилка відповіді сервера'); }
-    } else {
-      showError(`Помилка сервера (${xhr.status})`);
-    }
+      try { const { job_id } = JSON.parse(xhr.responseText); S.jobId = job_id; connectSSE(job_id); }
+      catch { showError('Помилка відповіді сервера'); }
+    } else { showError(`Помилка сервера (${xhr.status})`); }
   };
-
   xhr.onerror = () => { S.xhr = null; showError('Сервер недоступний. Перевір чи запущено server.py'); };
   xhr.onabort = () => { S.xhr = null; };
   xhr.send(S.file);
@@ -2437,38 +1787,33 @@ function uploadFile() {
 
 function connectSSE(jobId) {
   setProgress(5, 'Підготовка...');
-
   const es = new EventSource(`/events/${jobId}`);
   S.sse = es;
-
   es.onmessage = e => {
     const data = JSON.parse(e.data);
-
-    if (data.type === 'progress') {
-      setProgress(data.pct, data.stage);
-
-    } else if (data.type === 'done') {
+    if (data.type === 'progress') setProgress(data.pct, data.stage);
+    else if (data.type === 'done') {
       es.close(); S.sse = null;
       stopDots();
-      setAppBusy(false);
       setProgress(100, 'Готово!');
       progFill.classList.add('done');
-      updateProcessingStages(100);
+      setDesktopStatus('Done', 'ok');
+      updateFooterProgress(false);
       S.result = data;
       setTimeout(() => showResult(data), 400);
-
     } else if (data.type === 'error') {
       es.close(); S.sse = null;
       stopDots();
-      setAppBusy(false);
+      setDesktopStatus('Error', 'err');
+      updateFooterProgress(false);
       showError(data.message);
     }
   };
-
   es.onerror = () => {
     es.close(); S.sse = null;
     stopDots();
-    setAppBusy(false);
+    setDesktopStatus('Error', 'err');
+    updateFooterProgress(false);
     showError('Відірвалось зʼєднання з сервером');
   };
 }
@@ -2478,54 +1823,46 @@ function setProgress(pct, stage) {
   progFill.style.width = p + '%';
   progPct.textContent  = p + '%';
   if (stage) progStage.textContent = stage;
-  updateProcessingStages(p);
+  if (footerFill) footerFill.style.width = p + '%';
+  if (footerPct)  footerPct.textContent = p + '%';
+  if (footerLabel && stage) footerLabel.textContent = stage;
 }
 
 function showError(msg) {
   stopDots();
-  setAppBusy(false);
   progErrMsg.textContent = msg;
   progErr.classList.add('show');
 }
-
 btnErrBack.addEventListener('click', () => {
   progErr.classList.remove('show');
+  setDesktopStatus('Ready', 'ok');
+  updateFooterProgress(false);
   switchTo(secUpload);
 });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   CANCEL
-   ═══════════════════════════════════════════════════════════════════════ */
 btnCancel.addEventListener('click', () => {
   if (S.xhr) { S.xhr.abort(); S.xhr = null; }
   if (S.sse) { S.sse.close(); S.sse = null; }
-  if (S.jobId) {
-    fetch(`/cancel/${S.jobId}`, { method: 'POST' }).catch(() => {});
-    S.jobId = null;
-  }
+  if (S.jobId) { fetch(`/cancel/${S.jobId}`, { method: 'POST' }).catch(() => {}); S.jobId = null; }
   stopDots();
-  setAppBusy(false);
+  setDesktopStatus('Ready', 'ok');
+  updateFooterProgress(false);
   progErr.classList.remove('show');
   switchTo(secUpload);
 });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   RESULT
-   ═══════════════════════════════════════════════════════════════════════ */
 function showResult(data) {
   const inSz  = data.in_size  || (S.file ? S.file.size : 0);
   const outSz = data.out_size || 0;
   const diff  = outSz - inSz;
   const pct   = inSz > 0 ? (diff / inSz * 100).toFixed(1) : '0.0';
   const sign  = parseFloat(pct) <= 0 ? '' : '+';
-
   const cells = [
     { l: 'Розмір до',     v: fmtBytes(inSz),                c: '' },
     { l: 'Розмір після',  v: fmtBytes(outSz),               c: '' },
     { l: 'Зміна розміру', v: sign + pct + '%',              c: parseFloat(pct) <= 0 ? 'green' : '' },
     { l: 'Час обробки',   v: (data.proc_time ?? 0) + ' с', c: '' },
   ];
-
   if (S.showHash && data.hash_before) {
     cells.push(
       { l: 'MD5 до',    v: data.hash_before, c: 'mono' },
@@ -2535,57 +1872,41 @@ function showResult(data) {
   } else {
     statsGrid.className = 'stats-grid n4';
   }
-
   statsGrid.innerHTML = cells.map(({ l, v, c }) =>
     `<div class="sc"><div class="sc-l">${l}</div><div class="sc-v ${c}">${v}</div></div>`
   ).join('');
-
   if (resultMeta) {
     const ui = PRESET_UI[S.preset] || PRESET_UI.medium;
-    resultMeta.textContent = `Поточний режим: ${ui.label} · ${ui.mode}`;
+    resultMeta.textContent = `Поточний режим: ${ui.label}`;
   }
-
-  /* Restart checkmark animation */
   const ckWrap = secResult.querySelector('.res-wrap');
   const ck = ckWrap?.querySelector('.ck');
   if (ckWrap && ck) ckWrap.replaceChild(ck.cloneNode(true), ck);
-
   switchTo(secResult);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   DOWNLOAD
-   ═══════════════════════════════════════════════════════════════════════ */
 btnDownload.addEventListener('click', () => {
   if (!S.jobId && !S.result?.job_id) return;
   const jobId    = S.jobId || S.result?.job_id;
   const filename = S.result?.filename || 'video_unique.mp4';
   const a = document.createElement('a');
-  a.href     = `/download/${jobId}`;
+  a.href = `/download/${jobId}`;
   a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
 });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   AGAIN
-   ═══════════════════════════════════════════════════════════════════════ */
 btnAgain.addEventListener('click', () => {
   S.file = null; S.videoInfo = null; S.result = null; S.jobId = null;
   finfo.classList.add('off');
   fthumb.innerHTML = ''; fthumb.textContent = '🎞';
   fname.textContent = '–'; fmeta.textContent = '–';
   btnGo.disabled = true;
-  if (sourceDetails) sourceDetails.style.display = 'none';
   progErr.classList.remove('show');
-  updateOutputSummary();
+  setDesktopStatus('Ready', 'ok');
+  updateSummary();
   switchTo(secUpload);
 });
 
-/* ═══════════════════════════════════════════════════════════════════════
-   DOTS ANIMATION
-   ═══════════════════════════════════════════════════════════════════════ */
 let _di = null, _dn = 0;
 function startDots() {
   _dn = 0; dots.textContent = '';
@@ -2593,14 +1914,11 @@ function startDots() {
 }
 function stopDots() { clearInterval(_di); dots.textContent = ''; }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   HELPERS
-   ═══════════════════════════════════════════════════════════════════════ */
 function fmtBytes(b) {
   if (!b) return '–';
-  if (b < 1024)        return b + ' B';
-  if (b < 1024**2)     return (b/1024).toFixed(1) + ' KB';
-  if (b < 1024**3)     return (b/1024**2).toFixed(1) + ' MB';
+  if (b < 1024)    return b + ' B';
+  if (b < 1024**2) return (b/1024).toFixed(1) + ' KB';
+  if (b < 1024**3) return (b/1024**2).toFixed(1) + ' MB';
   return (b/1024**3).toFixed(2) + ' GB';
 }
 function fmtDur(s) {
@@ -2608,11 +1926,8 @@ function fmtDur(s) {
   return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   BOOT
-   ═══════════════════════════════════════════════════════════════════════ */
-updatePresetUI();
-updateOutputSummary();
+updatePresetInfo();
+updateSummary();
 initAuth();
 </script>
 </body>
