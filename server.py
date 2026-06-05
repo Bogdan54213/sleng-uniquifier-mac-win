@@ -51,6 +51,10 @@ BASE_DIR = Path(__file__).parent
 _jobs: dict = {}
 _lock = threading.Lock()
 
+NO_WINDOW_KW = {}
+if sys.platform == 'win32' and hasattr(subprocess, 'CREATE_NO_WINDOW'):
+    NO_WINDOW_KW['creationflags'] = subprocess.CREATE_NO_WINDOW
+
 
 # ── HTTP сервер (multi-threaded) ──────────────────────────────────────────────
 
@@ -71,6 +75,8 @@ class Handler(BaseHTTPRequestHandler):
             self._auth_status()
         elif p == '/api/runtime':
             self._runtime_status()
+        elif p.startswith('/assets/'):
+            self._asset(p[8:])
         elif p.startswith('/fonts/'):
             self._font(p[7:])
         elif p.startswith('/events/'):
@@ -99,6 +105,18 @@ class Handler(BaseHTTPRequestHandler):
             return
         ct = 'font/ttf' if safe.endswith('.ttf') else 'font/otf'
         self._file(font_path, ct)
+
+    def _asset(self, name: str):
+        from pathlib import Path as _P
+        safe = _P(name).name
+        if safe != 'brand-logo.png':
+            self.send_error(404)
+            return
+        asset_path = BASE_DIR / 'assets' / safe
+        if not asset_path.exists():
+            self.send_error(404)
+            return
+        self._file(asset_path, 'image/png')
 
     def do_POST(self):
         p = urlparse(self.path).path
@@ -453,6 +471,7 @@ def _process(job_id, inp: Path, out: Path, preset, keep_audio, no_rot, seed, sho
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True, encoding='utf-8', errors='replace',
+            **NO_WINDOW_KW,
         )
         _upd(job_id, proc=proc)
 

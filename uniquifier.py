@@ -72,6 +72,10 @@ def _find_tool(name: str) -> str:
 FFMPEG  = _find_tool("ffmpeg")
 FFPROBE = _find_tool("ffprobe")
 
+NO_WINDOW_KW = {}
+if sys.platform == "win32" and hasattr(subprocess, "CREATE_NO_WINDOW"):
+    NO_WINDOW_KW["creationflags"] = subprocess.CREATE_NO_WINDOW
+
 # ─── Константи ────────────────────────────────────────────────────────────────
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.m4v'}
@@ -156,6 +160,7 @@ def check_ffmpeg() -> bool:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 timeout=10,
+                **NO_WINDOW_KW,
             )
             if result.returncode != 0:
                 stderr_tail = result.stderr.decode('utf-8', errors='replace').strip()[-300:]
@@ -213,6 +218,7 @@ def get_video_info(input_path: Path) -> Optional[Dict]:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=60,
+            **NO_WINDOW_KW,
         )
         if result.returncode != 0:
             err = result.stderr.decode('utf-8', errors='replace').strip()
@@ -770,6 +776,7 @@ def run_ffmpeg(
             text=True,
             encoding='utf-8',
             errors='replace',
+            **NO_WINDOW_KW,
         )
     except FileNotFoundError:
         print("❌ ffmpeg не знайдено")
@@ -816,6 +823,7 @@ def run_ffmpeg_silent(cmd: List[str]) -> int:
             cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            **NO_WINDOW_KW,
         )
         return result.returncode
     except (FileNotFoundError, OSError):

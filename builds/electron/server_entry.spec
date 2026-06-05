@@ -19,6 +19,7 @@ a = Analysis(
         (str(ROOT / 'config.py'),     '.'),
         # Шрифти бренд-стилю — Orbitron (logo) + CascadiaCode (mono)
         (str(ROOT / 'fonts'),         'fonts'),
+        (str(ROOT / 'assets'),        'assets'),
     ],
     hiddenimports=[
         'server',

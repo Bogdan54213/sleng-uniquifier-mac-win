@@ -123,20 +123,23 @@ input { user-select: text; }
 
 /* ───── TOPBAR — Linear style ───── */
 .app-topbar {
-  padding: 0 16px;
+  padding: 0 152px 0 16px;
   display: flex; align-items: center; justify-content: space-between;
   border-bottom: 1px solid var(--border-soft);
   background: var(--bg-panel);
+  -webkit-app-region: drag;
 }
-.brand { display: flex; align-items: center; gap: 9px; cursor: pointer; padding: 4px 6px; border-radius: var(--radius-sm); transition: background .12s ease; }
+.brand { display: flex; align-items: center; gap: 9px; cursor: pointer; padding: 4px 6px; border-radius: var(--radius-sm); transition: background .12s ease; -webkit-app-region: no-drag; }
 .brand:hover { background: var(--bg-card-hover); }
 .brand-logo {
   width: 26px; height: 26px;
   border-radius: var(--radius-sm);
-  background: var(--yellow);
+  background: #050505;
+  border: 1px solid rgba(209, 255, 30, .35);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
   display: flex; align-items: center; justify-content: center;
 }
-.brand-logo svg { color: #1A1A1D; }
+.brand-logo img { width: 22px; height: 22px; display: block; object-fit: contain; }
 .brand-info { line-height: 1.15; }
 .brand-name { font-size: 13px; font-weight: 600; color: var(--text-main); letter-spacing: -.01em; }
 .brand-sub  { font-size: 10.5px; color: var(--text-dim); letter-spacing: -.005em; }
@@ -156,7 +159,7 @@ input { user-select: text; }
 .status-dot.warn { background: var(--yellow); }
 .status-dot.err  { background: var(--danger); }
 
-.topbar-actions { display: flex; align-items: center; gap: 4px; }
+.topbar-actions { display: flex; align-items: center; gap: 4px; -webkit-app-region: no-drag; }
 .icon-btn {
   width: 28px; height: 28px;
   background: transparent;
@@ -556,12 +559,13 @@ input { user-select: text; }
 .auth-hero-logo {
   width: 44px; height: 44px;
   border-radius: 10px;
-  background: var(--yellow);
+  background: #050505;
+  border: 1px solid rgba(209, 255, 30, .35);
   margin: 0 auto 10px;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 20px rgba(255,212,0,.32);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 18px 40px rgba(191,255,0,.12);
 }
-.auth-hero-logo svg { color: #050505; }
+.auth-hero-logo img { width: 34px; height: 34px; display: block; object-fit: contain; }
 .auth-hero-title { font-size: 16px; font-weight: 700; color: var(--text-main); margin-top: 4px; }
 .auth-hero-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
 
@@ -877,11 +881,7 @@ input { user-select: text; }
   <header class="app-topbar">
     <div class="brand hdr-logo">
       <div class="brand-logo">
-        <!-- Стилізована літера S — bold geometric, чорна на жовтому фоні -->
-        <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path fill="#050505"
-            d="M17.6 4.2c-1.4-1-3.2-1.6-5.4-1.6-2.1 0-3.8.5-5 1.5-1.3 1-1.9 2.3-1.9 4 0 1.4.5 2.5 1.4 3.4.9.8 2.5 1.4 4.7 1.9 1.7.4 2.7.7 3.1 1 .4.3.6.6.6 1.1 0 .6-.3 1-.8 1.3-.6.3-1.4.4-2.5.4-1.4 0-2.6-.2-3.7-.5-1.1-.3-2.1-.8-3-1.4l-1.7 3.5c1 .8 2.3 1.4 3.8 1.8 1.5.4 3 .6 4.6.6 2.3 0 4.1-.5 5.4-1.5 1.4-1 2.1-2.4 2.1-4.1 0-1.4-.5-2.5-1.4-3.4-.9-.8-2.5-1.4-4.7-1.9-1.7-.4-2.8-.7-3.2-1-.4-.3-.6-.6-.6-1.1 0-.5.3-1 .8-1.3.6-.3 1.4-.4 2.4-.4 1.1 0 2.2.2 3.2.5 1 .3 1.9.7 2.8 1.3l1.7-3.5z"/>
-        </svg>
+        <img src="/assets/brand-logo.png" alt="" aria-hidden="true">
       </div>
       <div class="brand-info">
         <div class="brand-name">Sleng Uniquifier</div>
@@ -919,12 +919,7 @@ input { user-select: text; }
           <div class="auth-form">
             <div class="auth-hero">
               <div class="auth-hero-logo">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="m21 2-9.6 9.6"/>
-                  <circle cx="7.5" cy="15.5" r="5.5"/>
-                  <path d="m21 2-3 3 2 2 3-3-2-2"/>
-                  <path d="m18 5-2.4 2.4"/>
-                </svg>
+                <img src="/assets/brand-logo.png" alt="" aria-hidden="true">
               </div>
               <div class="auth-hero-title">Активація доступу</div>
               <div class="auth-hero-sub">Введи дані, щоб адміністратор видав код для цього пристрою.</div>

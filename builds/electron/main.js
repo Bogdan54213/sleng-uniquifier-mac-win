@@ -229,11 +229,17 @@ async function createWindow() {
     resizable:       false,
     maximizable:     false,
     fullscreenable:  false,
-    title:           'Sleng Uniquifier',
+    title:           '',
     icon:            iconPath,
     backgroundColor: '#050505',
     autoHideMenuBar: true,
     frame:           true,
+    titleBarStyle:   'hidden',
+    titleBarOverlay: {
+      color:       '#1d1d22',
+      symbolColor: '#8d8f99',
+      height:      34,
+    },
     show:            false,
     webPreferences: {
       nodeIntegration:  false,

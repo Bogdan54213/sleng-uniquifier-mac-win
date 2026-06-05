@@ -33,8 +33,11 @@
 
   /* Логотип — той самий що в main UI */
   .logo {
-    filter: drop-shadow(0 6px 20px rgba(255,138,0,.42))
-            drop-shadow(0 0 40px rgba(255,138,0,.18));
+    width: 74px;
+    height: 74px;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 20px rgba(190,255,0,.34))
+            drop-shadow(0 0 42px rgba(190,255,0,.16));
     animation: float 2.6s ease-in-out infinite;
   }
   @keyframes float {
@@ -78,19 +81,7 @@
 <body>
 <div class="splash">
   <!-- Логотип-плеєр (точно як у main UI) -->
-  <svg class="logo" viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="splashBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%"   stop-color="#ffd60a"/>
-        <stop offset="60%"  stop-color="#ff7a00"/>
-        <stop offset="100%" stop-color="#cc4400"/>
-      </linearGradient>
-    </defs>
-    <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#splashBrandGrad)"/>
-    <rect x="4" y="4" width="56" height="56" rx="14" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="1"/>
-    <path d="M26 20 L46 32 L26 44 Z" fill="#0a0a0a" stroke="#0a0a0a" stroke-width=".5" stroke-linejoin="round"/>
-    <circle cx="50" cy="14" r="4" fill="#ffd60a" stroke="#0a0a0a" stroke-width="1.5"/>
-  </svg>
+  <img class="logo" src="brand-logo.png" alt="" aria-hidden="true">
 
   <div class="title">Sleng Унікалізатор</div>
 
