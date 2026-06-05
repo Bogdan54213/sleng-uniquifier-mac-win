@@ -143,7 +143,11 @@ PRESETS: Dict[str, Dict] = {
 
 def check_ffmpeg() -> bool:
     """Перевірка наявності FFmpeg та ffprobe.
-    Повертає True якщо обидва знайдені, False якщо ні (не завершує процес)."""
+    Повертає True якщо обидва знайдені, False якщо ні (не завершує процес).
+
+    Якщо запуск падає — логуємо ВСЮ причину (exception/stderr/exit code)
+    щоб діагностувати: антивірус, диск переповнений, відсутні DLL, тощо.
+    """
     missing = []
     for tool, path in [('ffmpeg', FFMPEG), ('ffprobe', FFPROBE)]:
         try:
@@ -151,10 +155,32 @@ def check_ffmpeg() -> bool:
                 [path, '-version'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                timeout=10,
             )
             if result.returncode != 0:
+                stderr_tail = result.stderr.decode('utf-8', errors='replace').strip()[-300:]
+                print(f"[ERR] {tool} exited with code {result.returncode}. "
+                      f"path={path}. stderr={stderr_tail!r}")
                 missing.append(tool)
-        except FileNotFoundError:
+            else:
+                # Перші 60 символів — щоб переконатись що це справді ffmpeg
+                head = result.stdout.decode('utf-8', errors='replace').splitlines()[0][:80]
+                print(f"[OK] {tool} runs ({path}): {head}")
+        except FileNotFoundError as e:
+            print(f"[ERR] {tool} FileNotFoundError: path={path}, msg={e}")
+            missing.append(tool)
+        except PermissionError as e:
+            print(f"[ERR] {tool} PermissionError (anti-virus block?): path={path}, msg={e}")
+            missing.append(tool)
+        except OSError as e:
+            print(f"[ERR] {tool} OSError (disk full? DLL missing?): "
+                  f"path={path}, errno={e.errno}, msg={e}")
+            missing.append(tool)
+        except subprocess.TimeoutExpired:
+            print(f"[ERR] {tool} timeout after 10s: path={path}")
+            missing.append(tool)
+        except Exception as e:
+            print(f"[ERR] {tool} unexpected {type(e).__name__}: path={path}, msg={e}")
             missing.append(tool)
 
     if missing:
@@ -167,12 +193,18 @@ def check_ffmpeg() -> bool:
 
 def get_video_info(input_path: Path) -> Optional[Dict]:
     """Отримання повної інформації про відео через ffprobe.
-    Повертає dict з полями streams і format, або None при помилці."""
+    Повертає dict з полями streams і format, або None при помилці.
+
+    Усі exception'и логуються — інакше «Не вдалося прочитати відео файл»
+    залишає юзера без жодного діагностичного сигналу.
+    """
     try:
+        # Тут -v error замість -v quiet — щоб бачити РЕАЛЬНІ помилки
+        # парсингу відео у stderr (corrupted, unsupported codec, тощо).
         result = subprocess.run(
             [
                 FFPROBE,
-                '-v', 'quiet',
+                '-v', 'error',
                 '-print_format', 'json',
                 '-show_streams',
                 '-show_format',
@@ -180,12 +212,33 @@ def get_video_info(input_path: Path) -> Optional[Dict]:
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            timeout=60,
         )
         if result.returncode != 0:
+            err = result.stderr.decode('utf-8', errors='replace').strip()
+            print(f"[ERR] ffprobe failed for {input_path}: "
+                  f"exit={result.returncode}, stderr={err[-400:]!r}")
             return None
         data = json.loads(result.stdout.decode('utf-8', errors='replace'))
         return data
-    except (json.JSONDecodeError, OSError, ValueError):
+    except FileNotFoundError as e:
+        print(f"[ERR] ffprobe FileNotFoundError: path={FFPROBE}, file={input_path}, msg={e}")
+        return None
+    except PermissionError as e:
+        print(f"[ERR] ffprobe PermissionError (anti-virus?): file={input_path}, msg={e}")
+        return None
+    except OSError as e:
+        print(f"[ERR] ffprobe OSError (disk full?): "
+              f"file={input_path}, errno={e.errno}, msg={e}")
+        return None
+    except subprocess.TimeoutExpired:
+        print(f"[ERR] ffprobe timeout (60s) on {input_path}")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"[ERR] ffprobe returned invalid JSON: file={input_path}, msg={e}")
+        return None
+    except Exception as e:
+        print(f"[ERR] ffprobe unexpected {type(e).__name__}: file={input_path}, msg={e}")
         return None
 
 
