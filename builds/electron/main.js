@@ -2,23 +2,29 @@ const { app, BrowserWindow, shell, Menu, dialog, clipboard } = require('electron
 const path  = require('path');
 const fs    = require('fs');
 const os    = require('os');
-const net   = require('net');
+const http  = require('http');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
 const updater = require('./updater');
 
 const PORT = 7474;
+const SERVER_TOKEN = crypto.randomBytes(16).toString('hex');
 let serverProcess  = null;
 let serverStderr   = '';     // зібраний stderr якщо процес впав
 let serverExitCode = null;   // exit code якщо процес закінчився передчасно
 let mainWindow     = null;
 
 // ── Шлях до server.exe (cross-platform) ──────────────────────────────────────
+function resourceDir() {
+  if (app.isPackaged) {
+    return process.resourcesPath;
+  }
+  return path.join(__dirname, 'resources');
+}
+
 function serverExePath() {
   const bin = process.platform === 'win32' ? 'server.exe' : 'server';
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, bin);
-  }
-  return path.join(__dirname, 'resources', bin);
+  return path.join(resourceDir(), bin);
 }
 
 // ── Лог-файл (туди ж куди пише server.exe) ──────────────────────────────────
@@ -32,16 +38,40 @@ function waitForPort(port, timeoutMs = 25000) {
   return new Promise((resolve, reject) => {
     const deadline = Date.now() + timeoutMs;
     const attempt  = () => {
-      // Якщо server.exe вже впав — далі чекати немає сенсу
       if (serverExitCode !== null) {
         return reject(new Error(`Сервер завершився передчасно (код ${serverExitCode})`));
       }
-      const sock = new net.Socket();
-      sock.setTimeout(400);
-      sock.on('connect', () => { sock.destroy(); resolve(); });
-      sock.on('error',   () => { sock.destroy(); retry(); });
-      sock.on('timeout', () => { sock.destroy(); retry(); });
-      sock.connect(port, '127.0.0.1');
+
+      let settled = false;
+      const retryOnce = () => {
+        if (settled) return;
+        settled = true;
+        retry();
+      };
+
+      const req = http.get({
+        hostname: '127.0.0.1',
+        port,
+        path: '/api/runtime',
+        timeout: 400,
+      }, res => {
+        let body = '';
+        res.setEncoding('utf8');
+        res.on('data', chunk => { body += chunk; });
+        res.on('end', () => {
+          try {
+            const data = JSON.parse(body);
+            if (data && data.token === SERVER_TOKEN) {
+              settled = true;
+              return resolve();
+            }
+          } catch {}
+          retryOnce();
+        });
+      });
+
+      req.on('timeout', () => { req.destroy(); retryOnce(); });
+      req.on('error',   () => retryOnce());
     };
     const retry = () => {
       if (Date.now() >= deadline) return reject(new Error('Сервер не відкрив порт за 25 сек'));
@@ -62,6 +92,8 @@ function startServer() {
 
   console.log('[main] starting server:', exePath);
 
+  const resDir = resourceDir();
+
   serverProcess = spawn(exePath, [], {
     // pipe щоб зловити будь-яку stderr-помилку (раніше було ignore — і помилки зникали)
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -69,7 +101,12 @@ function startServer() {
     windowsHide: true,
     // SLENG_NO_BROWSER=1 — server.py не відкриває браузер на старті,
     // бо Electron сам показує UI всередині BrowserWindow.
-    env: { ...process.env, SLENG_NO_BROWSER: '1' },
+    env: {
+      ...process.env,
+      SLENG_NO_BROWSER: '1',
+      SLENG_SERVER_TOKEN: SERVER_TOKEN,
+      FFMPEG_DIR: resDir,
+    },
   });
 
   serverProcess.on('error', err => {

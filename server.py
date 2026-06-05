@@ -56,7 +56,7 @@ _lock = threading.Lock()
 
 class Server(socketserver.ThreadingMixIn, HTTPServer):
     daemon_threads = True
-    allow_reuse_address = True
+    allow_reuse_address = False
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -69,6 +69,8 @@ class Handler(BaseHTTPRequestHandler):
             self._file(BASE_DIR / 'index.html', 'text/html; charset=utf-8')
         elif p == '/api/auth/status':
             self._auth_status()
+        elif p == '/api/runtime':
+            self._runtime_status()
         elif p.startswith('/fonts/'):
             self._font(p[7:])
         elif p.startswith('/events/'):
@@ -130,6 +132,13 @@ class Handler(BaseHTTPRequestHandler):
             'machine_id': get_machine_id(),
             'name':       reg[2] if reg else '',
             'contact':    reg[3] if reg else '',
+        })
+
+    def _runtime_status(self):
+        self._json(200, {
+            'ok': True,
+            'pid': os.getpid(),
+            'token': os.environ.get('SLENG_SERVER_TOKEN', ''),
         })
 
     def _auth_register(self):
@@ -513,9 +522,20 @@ def _cleanup(job_id: str, delay: int = 0):
 # ── Запуск ────────────────────────────────────────────────────────────────────
 
 def main():
-    check_ffmpeg()  # лише попередження, не exit
+    if not check_ffmpeg():
+        raise RuntimeError(
+            'FFmpeg/ffprobe not found. Put ffmpeg.exe and ffprobe.exe next to server.exe '
+            'or set FFMPEG_DIR.'
+        )
 
     url = f'http://{HOST}:{PORT}'
+    try:
+        srv = Server((HOST, PORT), Handler)
+    except OSError as e:
+        raise RuntimeError(
+            f'Port {PORT} is already in use. Close other Sleng Uniquifier windows and try again.'
+        ) from e
+
     print(f'\n  🎬  Video Uniquifier — запущено')
     print(f'  🌐  {url}')
     print(f'  ⌨️   Зупинити: Ctrl+C\n')
@@ -526,7 +546,6 @@ def main():
     if os.environ.get('SLENG_NO_BROWSER') != '1':
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
 
-    srv = Server((HOST, PORT), Handler)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
