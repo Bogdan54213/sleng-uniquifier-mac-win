@@ -237,10 +237,39 @@ jobs:
       - name: Extract release notes from tag message
         id: notes
         run: |
-          NOTES=$(git tag -l --format='%(contents)' "v${{ needs.resolve-version.outputs.version }}" || echo "")
-          if [ -z "$NOTES" ]; then
-            NOTES="Реліз v${{ needs.resolve-version.outputs.version }}"
+          # Стратегія:
+          #   ANNOTATED тег (`git tag -a vX -m "..."`)   → беремо текст з -m, як написав
+          #   LIGHTWEIGHT тег (`git tag vX`, для dev-iter) → generic user-friendly текст,
+          #                                                  без технічних git-деталей
+          #
+          # Як перейти на student-mode (коли треба показувати реальні нотатки):
+          #   git tag -a v1.1.0 -m "Що нового для юзера: ..."
+          #   git push origin v1.1.0
+          #
+          # Дев-режим за замовчуванням ВЕСЬ ЧАС поки тегуєш як `git tag vX`.
+
+          TAG="v${{ needs.resolve-version.outputs.version }}"
+          TAG_TYPE=$(git cat-file -t "$TAG" 2>/dev/null || echo "")
+
+          if [ "$TAG_TYPE" = "tag" ]; then
+            # Annotated tag — публічні нотатки. Беремо тіло повідомлення
+            # (без header — subject + body, без службової інфи).
+            NOTES=$(git tag -l --format='%(contents)' "$TAG" | sed '/^-----BEGIN/,/^-----END/d')
+          else
+            # Lightweight tag — dev-iter. Generic нотатки щоб юзер не бачив
+            # 'fix CI fail — cache:pip потребував requirements.txt...'
+            NOTES="Технічне оновлення та покращення стабільності."
           fi
+
+          # Гарантуємо не-порожнє значення
+          if [ -z "$(echo "$NOTES" | tr -d '[:space:]')" ]; then
+            NOTES="Технічне оновлення."
+          fi
+
+          echo "[notes] tag_type=$TAG_TYPE"
+          echo "[notes] body:"
+          echo "$NOTES" | head -10
+
           # Багаторядкові outputs у GitHub Actions через HEREDOC
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
