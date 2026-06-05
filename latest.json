@@ -1,7 +1,7 @@
 {
-  "version": "1.0.7",
-  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.7/SlengUniquifier_Setup_v1.0.7.exe",
-  "notes":   "v1.0.7: Roboto Mono скрізь + фікс жовтих focus-смуг  ▸ Уніфіковано шрифт — Roboto Mono для всього UI (програмерська естетика,   повна кирилиця, 400/500/700 weights) ▸ Прибрано старі непотрібні шрифти (Roboto non-mono, CascadiaCode, Orbitron) ▸ Виправлено: жовті вертикальні смуги по краях після кліку на drop zone   (focus outline тепер тільки для клавіатурної навігації, не для миші) ▸ Bump до v1.0.7 у package.json, setup.iss, version-badge ",
-  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.7/SlengUniquifier_v1.0.7_x64.dmg",
-  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.7/SlengUniquifier_v1.0.7_arm64.dmg"
+  "version": "1.0.8",
+  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.8/SlengUniquifier_Setup_v1.0.8.exe",
+  "notes":   "v1.0.8: фікс жовтої вертикальної смуги в progress (position:relative на progress-track) ",
+  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.8/SlengUniquifier_v1.0.8_x64.dmg",
+  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.8/SlengUniquifier_v1.0.8_arm64.dmg"
 }
