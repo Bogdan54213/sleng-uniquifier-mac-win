@@ -174,30 +174,41 @@ input { user-select: text; }
   transition: all .12s ease;
 }
 .icon-btn:hover { background: var(--bg-card-hover); color: var(--text-main); }
-/* "Доступне оновлення" pill у топбарі. З'являється коли silent-check
-   виявив нову версію. Клік → відкриває кастомний update-modal. */
+/* "Доступне оновлення" pill — Linear-style: subtle dark bg + soft border,
+   жовтою лишається ТІЛЬКИ крапка-індикатор. Текст у muted-кольорі.
+   Видимий тільки коли silent-check справді виявив нову версію.
+
+   ВАЖЛИВО: правило з [hidden] йде ПЕРЕД інлайн-style — інакше .update-pill
+   зі specificity (0,1,0) перекриває UA-stylesheet [hidden] { display: none }
+   і pill залишається видимим коли його кодом ховаєш. */
+.update-pill[hidden] { display: none !important; }
 .update-pill {
   height: 26px;
   padding: 0 10px 0 9px;
   display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(242, 193, 46, .08);
-  border: 1px solid rgba(242, 193, 46, .35);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-soft);
   border-radius: 100px;
-  color: var(--yellow);
+  color: var(--text-muted);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: -.005em;
   cursor: pointer;
   -webkit-app-region: no-drag;
-  transition: background .12s ease, border-color .12s ease;
-  animation: updatePillIn .3s ease;
+  transition: background .12s ease, border-color .12s ease, color .12s ease;
+  animation: updatePillIn .25s ease;
 }
-.update-pill:hover { background: rgba(242, 193, 46, .14); border-color: rgba(242, 193, 46, .55); }
+.update-pill:hover {
+  background: var(--bg-card);
+  border-color: var(--border-medium);
+  color: var(--text-main);
+}
 .update-pill-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--yellow);
-  box-shadow: 0 0 6px rgba(242, 193, 46, .8);
+  box-shadow: 0 0 6px rgba(242, 193, 46, .55);
   animation: updateDotPulse 1.6s ease-in-out infinite;
+  flex-shrink: 0;
 }
 @keyframes updatePillIn {
   from { opacity: 0; transform: translateY(-4px); }
@@ -361,7 +372,35 @@ input { user-select: text; }
   border-radius: var(--radius-xs);
   letter-spacing: .01em;
   margin-left: 4px;
+  cursor: pointer;
+  background: transparent;
+  -webkit-app-region: no-drag;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
 }
+.version-badge:hover { background: var(--bg-card-hover); color: var(--text-main); border-color: var(--border-medium); }
+.version-badge.checking { opacity: .55; }
+/* Toast "Це остання версія" — спливаюча підказка після ручної перевірки */
+.update-toast {
+  position: fixed;
+  top: 52px; right: 16px;
+  z-index: 90;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px 9px 10px;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-main);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .5);
+  animation: updateToastIn .22s ease, updateToastOut .22s ease 2.4s forwards;
+}
+.update-toast-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px rgba(81, 207, 102, .6);
+}
+@keyframes updateToastIn  { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes updateToastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-6px); } }
 
 /* ───── BODY ───── */
 .app-body {
@@ -1114,7 +1153,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge">v1.0.18</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.19</span>
     </div>
   </header>
 
@@ -1609,6 +1648,41 @@ input { user-select: text; }
   window.slengUpdate.getStatus().then((info) => {
     if (info && info.available) showPill(info);
   }).catch(() => {});
+
+  // Клік по version-badge — ручна перевірка. Якщо є оновлення → відкриває modal.
+  // Якщо ні — показує subtle toast "Це остання версія" на 2.5 сек.
+  const versionBadge = document.getElementById('versionBadge');
+  if (versionBadge) {
+    versionBadge.addEventListener('click', async () => {
+      if (versionBadge.classList.contains('checking')) return;
+      versionBadge.classList.add('checking');
+      try {
+        const info = await window.slengUpdate.check();
+        if (info && info.available) {
+          showPill(info);
+          openModal();
+        } else {
+          showToast(`Це остання версія (${versionBadge.textContent})`);
+        }
+      } catch {
+        showToast('Не вдалося перевірити оновлення');
+      } finally {
+        versionBadge.classList.remove('checking');
+      }
+    });
+  }
+
+  function showToast(text) {
+    // Викидаємо попередній toast якщо ще висить
+    document.querySelectorAll('.update-toast').forEach((el) => el.remove());
+    const toast = document.createElement('div');
+    toast.className = 'update-toast';
+    toast.innerHTML = '<span class="update-toast-dot"></span><span></span>';
+    toast.lastElementChild.textContent = text;
+    document.body.appendChild(toast);
+    // Видаляємо після анімації виходу
+    setTimeout(() => toast.remove(), 3000);
+  }
 })();
 
 const S = {
