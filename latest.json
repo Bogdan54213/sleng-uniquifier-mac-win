@@ -1,7 +1,7 @@
 {
-  "version": "1.0.18",
-  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.18/SlengUniquifier_Setup_v1.0.18.exe",
-  "notes":   "v1.0.18: повністю кастомний update UI у стилі унікалізатора  ВИНОС native dialog'ів у renderer process:    Раніше: через 10 сек після старту вилазив white-themed dialog.showMessageBox,   при оновленні — окреме маленьке BrowserWindow з блакитним прогрес-баром.   Все це візуально випадало з темного жовтого стилю.    Тепер:     - updater.js — чиста логіка (fetchJson / downloadInstaller / runInstallerAndQuit),       без UI взагалі     - main.js — IPC handlers (update:check / update:start / update:get-status)       + silent background-check через 3s після ready-to-show     - preload.js — slengUpdate API для безпечного renderer-доступу       (getStatus, startInstall, onStatus, onProgress, onInstalling, onError)     - index.html:       • Pill 'Доступне он",
-  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.18/SlengUniquifier_v1.0.18_x64.dmg",
-  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.18/SlengUniquifier_v1.0.18_arm64.dmg"
+  "version": "1.0.19",
+  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.19/SlengUniquifier_Setup_v1.0.19.exe",
+  "notes":   "v1.0.19: фікс pill-завжди-видимий + Linear-style + клік по version-badge для ручної перевірки  ДВА БАГИ ВИПРАВЛЕНО:  1. Pill 'Доступне оновлення' показувався навіть на останній версії.    Причина — CSS specificity: '.update-pill { display: inline-flex }' (0,1,0)    перекривало UA-rule '[hidden] { display: none }' (0,0,0).    Фікс — '.update-pill[hidden] { display: none !important }'.  2. Pill стилізований занадто яскраво (жовтий fill + жовта обводка)    випадає з Linear-стилю топбару. Тепер: subtle bg (var(--bg-card-hover)) +    soft border + muted text. Жовтою ЛИШИЛАСЬ ТІЛЬКИ пульсуюча крапка-індикатор —    єдиний accent. Як version-badge і status-pill поруч.  ДОДАНО:   • version-badge клікабельна — руч",
+  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.19/SlengUniquifier_v1.0.19_x64.dmg",
+  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.19/SlengUniquifier_v1.0.19_arm64.dmg"
 }
