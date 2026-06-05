@@ -1,7 +1,7 @@
 {
-  "version": "1.0.21",
-  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.21/SlengUniquifier_Setup_v1.0.21.exe",
-  "notes":   "v1.0.21: fix CI fail — cache:'pip' потребував requirements.txt якого нема  Помилка у v1.0.20: actions/setup-python@v5 з cache:'pip' впав у обидвох jobs (Windows + Mac) одразу на кроці Setup Python 3.11. Причина — cache:'pip' автоматично шукає requirements.txt / pyproject.toml у репо щоб обчислити cache-key. У нас deps інлайн (pip install pyinstaller pillow), такого файлу нема → setup-python падає з 'No file matched...'.  Прибрав cache:'pip'. Інші 3 оптимізації лишаються:   ✅ Inno lzma2/max замість ultra64 (-5..-7 хв, головний виграш)   ✅ FFmpeg ZIP кеш (-30s)   ✅ npm cache (-10s)   ✅ Concurrency cancel-in-progress  Pip-кеш був копійкою (~10s) — не варто додавати requirements.txt тільки заради нього. Видалив cache:'pip' у Windows і Mac job",
-  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.21/SlengUniquifier_v1.0.21_x64.dmg",
-  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.21/SlengUniquifier_v1.0.21_arm64.dmg"
+  "version": "1.0.23",
+  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.23/SlengUniquifier_Setup_v1.0.23.exe",
+  "notes":   "Технічне оновлення та покращення стабільності. ",
+  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.23/SlengUniquifier_v1.0.23_x64.dmg",
+  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.23/SlengUniquifier_v1.0.23_arm64.dmg"
 }
