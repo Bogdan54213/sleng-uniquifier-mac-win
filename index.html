@@ -184,11 +184,11 @@ input { user-select: text; }
 .update-pill[hidden] { display: none !important; }
 .update-pill {
   height: 26px;
-  padding: 0 10px 0 9px;
+  padding: 0 9px;
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--bg-card-hover);
   border: 1px solid var(--border-soft);
-  border-radius: 100px;
+  border-radius: var(--radius-xs);  /* Linear-style: 4px, як version-badge поруч */
   color: var(--text-muted);
   font-size: 11px;
   font-weight: 500;
@@ -1153,7 +1153,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.22</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.23</span>
     </div>
   </header>
 
