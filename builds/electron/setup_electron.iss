@@ -1,7 +1,7 @@
 ; Inno Setup — Sleng Uniquifier (Electron)
 
 #define MyAppName      "Sleng Uniquifier"
-#define MyAppVersion   "1.0.19"
+#define MyAppVersion   "1.0.20"
 #define MyAppPublisher "Sleng"
 #define MyAppExeName   "Sleng Uniquifier.exe"
 #define PackedDir      "..\..\dist\electron-packed\Sleng Uniquifier-win32-x64"
@@ -16,7 +16,12 @@ DefaultGroupName={#MyAppName}
 OutputDir=..\..\dist\installer
 OutputBaseFilename=SlengUniquifier_Setup_v{#MyAppVersion}
 SetupIconFile=icon.ico
-Compression=lzma2/ultra64
+; lzma2/max (16 MB словник) — 90-95% від ultra64 за стисненням
+; але ВТРИЧИ-ЧЕТВЕРИЧИ швидше на CI. На 463 МБ це -5..-7 хв.
+; ultra64 економило ~20 МБ але робило installer 12+ хв.
+; Якщо потрібен максимально малий exe для production-public release —
+; можна тимчасово повернути ultra64 і запушити окремий тег.
+Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=admin

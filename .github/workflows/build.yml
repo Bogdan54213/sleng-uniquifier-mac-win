@@ -10,6 +10,13 @@ on:
     tags:     ['v*.*.*']
   workflow_dispatch:
 
+# Якщо запушили новий commit/тег ДО завершення попереднього run'у — скасувати
+# попередній. Економить хвилини на rapid-iter (наприклад push v1.0.20 поки v1.0.19
+# ще білдиться). Тег-релізи теж зберігаються бо github.ref у них унікальний.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   # ── Витягуємо версію з тегу або з package.json ───────────────────────────────
@@ -73,11 +80,23 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: Install Python deps
         run: pip install pyinstaller pillow
 
+      # Кеш ZIP з FFmpeg-бінарниками. Ключ прив'язаний до URL — поки BtbN
+      # publish'ить під 'latest' тегом, ключ не змінюється, кеш hit.
+      # При новому BtbN-релізі — можна руками інкрементнути cache-key-version.
+      - name: Cache FFmpeg binaries
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: builds\electron\ffmpeg
+          key: ffmpeg-btbn-latest-v2
+
       - name: Download FFmpeg (real binaries, not chocolatey shim)
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           # ВАЖЛИВО: choco install ffmpeg ставить shim (~400KB) який потім
@@ -111,6 +130,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: builds/electron/package-lock.json
 
       - name: Build Windows installer
         run: builds\electron\build.bat
@@ -164,6 +185,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: Install Python deps
         run: pip3 install pyinstaller pillow
@@ -175,6 +197,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: builds/electron/package-lock.json
 
       - name: Build Mac DMG
         run: bash builds/electron/build_mac.sh
