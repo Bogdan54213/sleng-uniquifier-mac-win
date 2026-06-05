@@ -1,46 +1,34 @@
 #!/usr/bin/env python3
 """
-Generate app icons from the source brand PNG.
+Prepare app icons from the provided PNG logo.
 
-The source file is kept in the repo so CI builds use the exact same logo as the
-desktop UI and splash screen.
+This does not redraw or stylize the logo. It copies brand-logo.png to icon.png
+unchanged, then converts that same PNG to icon.ico for Windows/Inno Setup.
 """
 from pathlib import Path
+from shutil import copyfile
 
 from PIL import Image
 
 
-SIZES = [16, 24, 32, 48, 64, 128, 256]
-SOURCE_NAME = "brand-logo.png"
-
-
-def fit_square(src: Image.Image, size: int) -> Image.Image:
-    src = src.convert("RGBA")
-    fitted = Image.new("RGBA", (size, size), (0, 0, 0, 255))
-
-    scale = min(size / src.width, size / src.height)
-    new_size = (max(1, round(src.width * scale)), max(1, round(src.height * scale)))
-    resized = src.resize(new_size, Image.Resampling.LANCZOS)
-    pos = ((size - resized.width) // 2, (size - resized.height) // 2)
-    fitted.alpha_composite(resized, pos)
-    return fitted
+ICO_SIZES = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
 
 
 def main():
     base = Path(__file__).resolve().parent
-    source = base / SOURCE_NAME
+    source = base / "brand-logo.png"
+    icon_png = base / "icon.png"
+    icon_ico = base / "icon.ico"
+
     if not source.exists():
         raise FileNotFoundError(f"Missing icon source: {source}")
 
-    src = Image.open(source)
+    copyfile(source, icon_png)
+    print(f"[OK] icon.png copied unchanged: {icon_png}")
 
-    png = fit_square(src, 1024)
-    png.save(base / "icon.png", format="PNG")
-    print(f"[OK] icon.png saved: {base / 'icon.png'}")
-
-    frames = [fit_square(src, s) for s in sorted(SIZES, reverse=True)]
-    frames[0].save(base / "icon.ico", format="ICO", append_images=frames[1:])
-    print(f"[OK] icon.ico saved: {base / 'icon.ico'}")
+    with Image.open(source) as img:
+        img.convert("RGBA").save(icon_ico, format="ICO", sizes=ICO_SIZES)
+    print(f"[OK] icon.ico converted from PNG: {icon_ico}")
 
 
 if __name__ == "__main__":
