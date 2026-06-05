@@ -1,7 +1,7 @@
 {
-  "version": "1.0.5",
-  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.5/SlengUniquifier_Setup_v1.0.5.exe",
-  "notes":   "v1.0.5: Uniq Studio redesign — desktop app shell + 3-col workspace + uniqueness impact ",
-  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.5/SlengUniquifier_v1.0.5_x64.dmg",
-  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.5/SlengUniquifier_v1.0.5_arm64.dmg"
+  "version": "1.0.6",
+  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.6/SlengUniquifier_Setup_v1.0.6.exe",
+  "notes":   "v1.0.6: compact desktop tool у Linear-стилі  ▸ Static 980×680 вікно, resizable:false, без браузера (SLENG_NO_BROWSER=1) ▸ Linear-style UI: warm dark gray (#1A1A1D), приглушений жовтий accent,   flat list-presets з dot-indicator, мінімальні borders, hover-states ▸ Roboto fonts (Regular/Medium/Bold) + Cascadia Code для tech-values ▸ 2-card layout: «Відео» (drop zone) | «Режим обробки» (presets + impact + options + summary + CTA) ▸ Топбар з S-лого, status pill, help/admin icons, version badge ▸ Status footer з compact progress bar ▸ Кастомний модал та toast-нотифікації замість native alert() ▸ Лого літера «S» у жовтому squircle ",
+  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.6/SlengUniquifier_v1.0.6_x64.dmg",
+  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.6/SlengUniquifier_v1.0.6_arm64.dmg"
 }
