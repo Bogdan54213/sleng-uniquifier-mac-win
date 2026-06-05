@@ -1,7 +1,7 @@
 {
-  "version": "1.0.17",
-  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.17/SlengUniquifier_Setup_v1.0.17.exe",
-  "notes":   "v1.0.17: топбар на одній лінії + лого без обведення + ─/✕ зливаються з фоном  Три фікси топбару:  1. Кнопки керування вікном (─ ✕) — змінив titleBarOverlay.color    з '#1d1d22' (помилкове сіре) на '#18181B' (точне --bg-panel з HTML).    Тепер native Windows controls зливаються з топбаром без 'квадратів'.  2. Лого більше не обведений темною заокругленою рамкою.    Прибрав з .brand-logo div: background:#050505, border:rgba(yellow),    inset shadow. Заокруглення тепер прямо на самому <img> через    border-radius — Windows shell не показує 'квадрат у квадраті'.  3. Всі елементи топбару — на одній baseline (height: 26px):    - .brand-logo: 26×26    - .app-status-pill: 26 (замість paddin",
-  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.17/SlengUniquifier_v1.0.17_x64.dmg",
-  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.17/SlengUniquifier_v1.0.17_arm64.dmg"
+  "version": "1.0.18",
+  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.18/SlengUniquifier_Setup_v1.0.18.exe",
+  "notes":   "v1.0.18: повністю кастомний update UI у стилі унікалізатора  ВИНОС native dialog'ів у renderer process:    Раніше: через 10 сек після старту вилазив white-themed dialog.showMessageBox,   при оновленні — окреме маленьке BrowserWindow з блакитним прогрес-баром.   Все це візуально випадало з темного жовтого стилю.    Тепер:     - updater.js — чиста логіка (fetchJson / downloadInstaller / runInstallerAndQuit),       без UI взагалі     - main.js — IPC handlers (update:check / update:start / update:get-status)       + silent background-check через 3s після ready-to-show     - preload.js — slengUpdate API для безпечного renderer-доступу       (getStatus, startInstall, onStatus, onProgress, onInstalling, onError)     - index.html:       • Pill 'Доступне он",
+  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.18/SlengUniquifier_v1.0.18_x64.dmg",
+  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.18/SlengUniquifier_v1.0.18_arm64.dmg"
 }
