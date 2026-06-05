@@ -301,8 +301,11 @@ async function createWindow() {
     autoHideMenuBar: true,
     frame:           true,
     titleBarStyle:   'hidden',
+    // ВАЖЛИВО: color ТУТ має МАТИ ТОЧНО таке саме значення як `--bg-panel`
+    // в index.html (зараз #18181B). Інакше у Windows shell зона з ─/✕
+    // показується як темно-сірий «квадрат» поруч з топбаром іншого кольору.
     titleBarOverlay: {
-      color:       '#1d1d22',
+      color:       '#18181B',
       symbolColor: '#8d8f99',
       height:      34,
     },

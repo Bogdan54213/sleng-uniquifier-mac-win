@@ -131,21 +131,26 @@ input { user-select: text; }
 }
 .brand { display: flex; align-items: center; gap: 9px; cursor: pointer; padding: 4px 6px; border-radius: var(--radius-sm); transition: background .12s ease; -webkit-app-region: no-drag; }
 .brand:hover { background: var(--bg-card-hover); }
+/* Логотип: PNG показуємо як є, без темної рамки/обведення.
+   border-radius прямо на <img>, щоб заокруглення накладалось на саму
+   PNG-картинку — Windows-shell більше не показує "квадрат у квадраті". */
 .brand-logo {
   width: 26px; height: 26px;
-  border-radius: var(--radius-sm);
-  background: #050505;
-  border: 1px solid rgba(209, 255, 30, .35);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
   display: flex; align-items: center; justify-content: center;
 }
-.brand-logo img { width: 22px; height: 22px; display: block; object-fit: contain; }
-.brand-info { line-height: 1; display: flex; align-items: center; min-height: 26px; }
+.brand-logo img {
+  width: 26px; height: 26px; display: block; object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+.brand-info { line-height: 1; display: flex; align-items: center; height: 26px; }
 .brand-name { font-size: 13px; font-weight: 600; color: var(--text-main); letter-spacing: -.01em; }
 
+/* Status pill і version badge — однакова висота 26px з лого,
+   щоб усі три елементи топбару стояли на одній baseline. */
 .app-status-pill {
-  display: flex; align-items: center; gap: 7px;
-  padding: 4px 10px 4px 8px;
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 26px;
+  padding: 0 10px 0 8px;
   background: transparent;
   border: 1px solid var(--border-soft);
   border-radius: 100px;
@@ -173,7 +178,9 @@ input { user-select: text; }
   font-family: var(--font-mono);
   font-size: 10.5px;
   color: var(--text-dim);
-  padding: 3px 7px;
+  height: 26px;
+  padding: 0 7px;
+  display: inline-flex; align-items: center;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-xs);
   letter-spacing: .01em;
@@ -927,7 +934,7 @@ input { user-select: text; }
           <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
       </button>
-      <span class="version-badge" id="versionBadge">v1.0.16</span>
+      <span class="version-badge" id="versionBadge">v1.0.17</span>
     </div>
   </header>
 
