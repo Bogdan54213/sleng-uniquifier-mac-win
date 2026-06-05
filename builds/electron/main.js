@@ -422,9 +422,68 @@ app.whenReady().then(async () => {
   //    автоматично закриється splash і покажеться main — плавно.
   await createWindow();
 
-  // Auto-update — перевіряємо через 10 сек після старту.
-  updater.startUpdateCheck(mainWindow);
+  // Auto-update: ТИХА фонова перевірка через 3 сек.
+  // НЕМАЄ native popup'у. Якщо є оновлення — посилаємо IPC у renderer,
+  // який показує власну "Доступне оновлення" pill у топбарі.
+  registerUpdateIPC();
+  scheduleSilentUpdateCheck();
 });
+
+
+// ── Auto-update IPC + silent background check ────────────────────────────────
+
+// Останній відомий результат перевірки. Renderer може його запитати
+// у будь-який момент через slengUpdate.getStatus().
+let pendingUpdate = { available: false };
+
+function registerUpdateIPC() {
+  ipcMain.handle('update:get-status', () => pendingUpdate);
+
+  ipcMain.handle('update:check', async () => {
+    const info = await updater.checkForUpdate();
+    pendingUpdate = info;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update:status', info);
+    }
+    return info;
+  });
+
+  ipcMain.handle('update:start', async () => {
+    if (!pendingUpdate.available) return { ok: false, error: 'No update available' };
+    try {
+      const installerPath = await updater.downloadInstaller(pendingUpdate.url, (p) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('update:progress', p);
+        }
+      });
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update:installing');
+      }
+      // Даємо renderer'у час показати "Запускаю інсталер..." до закриття вікна
+      setTimeout(() => updater.runInstallerAndQuit(installerPath), 800);
+      return { ok: true };
+    } catch (e) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update:error', e.message);
+      }
+      return { ok: false, error: e.message };
+    }
+  });
+}
+
+function scheduleSilentUpdateCheck() {
+  if (!app.isPackaged) {
+    console.log('[updater] dev mode — skip update check');
+    return;
+  }
+  setTimeout(async () => {
+    const info = await updater.checkForUpdate();
+    pendingUpdate = info;
+    if (info.available && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update:status', info);
+    }
+  }, 3000);
+}
 
 app.on('window-all-closed', () => {
   if (serverProcess) {

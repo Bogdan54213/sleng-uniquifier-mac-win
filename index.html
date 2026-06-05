@@ -174,6 +174,182 @@ input { user-select: text; }
   transition: all .12s ease;
 }
 .icon-btn:hover { background: var(--bg-card-hover); color: var(--text-main); }
+/* "Доступне оновлення" pill у топбарі. З'являється коли silent-check
+   виявив нову версію. Клік → відкриває кастомний update-modal. */
+.update-pill {
+  height: 26px;
+  padding: 0 10px 0 9px;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(242, 193, 46, .08);
+  border: 1px solid rgba(242, 193, 46, .35);
+  border-radius: 100px;
+  color: var(--yellow);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -.005em;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: background .12s ease, border-color .12s ease;
+  animation: updatePillIn .3s ease;
+}
+.update-pill:hover { background: rgba(242, 193, 46, .14); border-color: rgba(242, 193, 46, .55); }
+.update-pill-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 6px rgba(242, 193, 46, .8);
+  animation: updateDotPulse 1.6s ease-in-out infinite;
+}
+@keyframes updatePillIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes updateDotPulse {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%      { opacity: .35; transform: scale(.8); }
+}
+
+/* Кастомний update modal у стилі унікалізатора (заміна dialog.showMessageBox). */
+.update-modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(5, 5, 5, .65);
+  backdrop-filter: blur(2px);
+  z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  animation: updateModalFade .15s ease;
+}
+.update-modal-backdrop[hidden] { display: none; }
+.update-modal {
+  width: 440px; max-width: calc(100vw - 32px);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .6);
+  overflow: hidden;
+  animation: updateModalIn .18s ease;
+}
+.update-modal-header {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  position: relative;
+}
+.update-modal-icon {
+  width: 36px; height: 36px;
+  background: rgba(242, 193, 46, .12);
+  border: 1px solid rgba(242, 193, 46, .35);
+  border-radius: var(--radius-sm);
+  color: var(--yellow);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.update-modal-icon svg { width: 18px; height: 18px; }
+.update-modal-title-wrap { flex: 1; min-width: 0; }
+.update-modal-title {
+  margin: 0 0 2px;
+  font-size: 14px; font-weight: 600;
+  color: var(--text-main); letter-spacing: -.005em;
+}
+.update-modal-subtitle {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.update-modal-close {
+  width: 26px; height: 26px;
+  border: none; background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; line-height: 1;
+  transition: background .12s ease, color .12s ease;
+}
+.update-modal-close:hover { background: var(--bg-card-hover); color: var(--text-main); }
+
+.update-modal-body { padding: 14px 18px; }
+.update-notes-label {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+.update-notes {
+  font-size: 12.5px;
+  color: var(--text-main);
+  line-height: 1.45;
+  max-height: 140px;
+  overflow-y: auto;
+  padding-right: 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.update-notes::-webkit-scrollbar { width: 6px; }
+.update-notes::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 3px; }
+
+.update-progress-wrap {
+  margin-top: 14px;
+  display: none;
+}
+.update-progress-wrap.on { display: block; }
+.update-progress-bar {
+  position: relative;
+  width: 100%; height: 6px;
+  background: rgba(255, 255, 255, .06);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.update-progress-fill {
+  position: absolute; inset: 0 auto 0 0;
+  width: 0%;
+  background: var(--yellow);
+  border-radius: 100px;
+  transition: width .25s ease;
+}
+.update-progress-text {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  display: flex; justify-content: space-between;
+}
+
+.update-modal-actions {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--border-soft);
+  background: rgba(0, 0, 0, .15);
+}
+.update-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-xs);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background .12s ease, border-color .12s ease;
+}
+.update-btn-secondary {
+  background: transparent;
+  border-color: var(--border-soft);
+  color: var(--text-muted);
+}
+.update-btn-secondary:hover { background: var(--bg-card-hover); color: var(--text-main); }
+.update-btn-primary {
+  background: var(--yellow);
+  color: #000;
+  font-weight: 600;
+}
+.update-btn-primary:hover { filter: brightness(.92); }
+.update-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+@keyframes updateModalFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes updateModalIn {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+
 .version-badge {
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -934,7 +1110,11 @@ input { user-select: text; }
           <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
       </button>
-      <span class="version-badge" id="versionBadge">v1.0.17</span>
+      <button class="update-pill" id="updatePill" type="button" hidden>
+        <span class="update-pill-dot"></span>
+        <span>Доступне оновлення</span>
+      </button>
+      <span class="version-badge" id="versionBadge">v1.0.18</span>
     </div>
   </header>
 
@@ -1273,8 +1453,163 @@ input { user-select: text; }
   </div>
 </div>
 
+<!-- Кастомний update modal — замінює native dialog.showMessageBox.
+     Показується ТІЛЬКИ коли юзер клікає "Доступне оновлення" pill у топбарі. -->
+<div class="update-modal-backdrop" id="updateBackdrop" hidden>
+  <div class="update-modal" role="dialog" aria-labelledby="updateModalTitle">
+    <header class="update-modal-header">
+      <div class="update-modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </div>
+      <div class="update-modal-title-wrap">
+        <h3 class="update-modal-title" id="updateModalTitle">Доступне оновлення</h3>
+        <p class="update-modal-subtitle" id="updateModalSubtitle">Версія —</p>
+      </div>
+      <button class="update-modal-close" id="updateModalClose" type="button" aria-label="Закрити">×</button>
+    </header>
+    <div class="update-modal-body">
+      <p class="update-notes-label">Що нового</p>
+      <div class="update-notes" id="updateModalNotes">—</div>
+      <div class="update-progress-wrap" id="updateProgressWrap">
+        <div class="update-progress-bar"><div class="update-progress-fill" id="updateProgressFill"></div></div>
+        <div class="update-progress-text">
+          <span id="updateProgressLeft">Завантаження…</span>
+          <span id="updateProgressRight">0%</span>
+        </div>
+      </div>
+    </div>
+    <footer class="update-modal-actions">
+      <button class="update-btn update-btn-secondary" id="updateLaterBtn" type="button">Пізніше</button>
+      <button class="update-btn update-btn-primary" id="updateNowBtn" type="button">Оновити</button>
+    </footer>
+  </div>
+</div>
+
 <script>
 'use strict';
+
+// ────────────────────────────────────────────────────────────────────────────
+// UPDATE FLOW — повністю кастомний UI, без native dialog.showMessageBox.
+//
+// Архітектура:
+//   1. main.js робить тиху перевірку через 3 сек після ready-to-show
+//   2. Якщо є оновлення → main посилає 'update:status' через IPC
+//   3. preload.js експортує slengUpdate.onStatus(callback)
+//   4. Тут показуємо pill у топбарі ("Доступне оновлення")
+//   5. Юзер клікає → відкривається кастомний modal
+//   6. Натискає "Оновити" → invoke('update:start') → main качає, шле progress
+//   7. На завершенні → main запускає installer і робить app.quit
+// ────────────────────────────────────────────────────────────────────────────
+(function initUpdateFlow() {
+  const pill         = document.getElementById('updatePill');
+  const backdrop     = document.getElementById('updateBackdrop');
+  const closeBtn     = document.getElementById('updateModalClose');
+  const laterBtn     = document.getElementById('updateLaterBtn');
+  const nowBtn       = document.getElementById('updateNowBtn');
+  const subtitleEl   = document.getElementById('updateModalSubtitle');
+  const notesEl      = document.getElementById('updateModalNotes');
+  const progressWrap = document.getElementById('updateProgressWrap');
+  const progressFill = document.getElementById('updateProgressFill');
+  const progressLeft = document.getElementById('updateProgressLeft');
+  const progressRight= document.getElementById('updateProgressRight');
+
+  // У браузерному preview (без Electron) slengUpdate не існує — просто нічого не робимо.
+  if (!window.slengUpdate) return;
+
+  let currentInfo = null;
+
+  function showPill(info) {
+    currentInfo = info;
+    if (pill) pill.hidden = false;
+  }
+  function hidePill() {
+    if (pill) pill.hidden = true;
+  }
+
+  function openModal() {
+    if (!currentInfo) return;
+    if (subtitleEl) subtitleEl.textContent = `Версія ${currentInfo.version}`;
+    if (notesEl)    notesEl.textContent    = (currentInfo.notes || 'Опис відсутній.').trim();
+    // Скинути стан прогресу при кожному відкритті
+    if (progressWrap) progressWrap.classList.remove('on');
+    if (progressFill) progressFill.style.width = '0%';
+    nowBtn.disabled = false;
+    laterBtn.disabled = false;
+    nowBtn.textContent = 'Оновити';
+    if (backdrop) backdrop.hidden = false;
+  }
+  function closeModal() {
+    if (backdrop) backdrop.hidden = true;
+  }
+
+  function fmtMb(bytes) { return (bytes / 1048576).toFixed(1); }
+
+  pill?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  laterBtn?.addEventListener('click', closeModal);
+  // Клік по затемненню — теж закриває (стандарт modal'у)
+  backdrop?.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+  // ESC для закриття
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && backdrop && !backdrop.hidden) closeModal();
+  });
+
+  nowBtn?.addEventListener('click', async () => {
+    nowBtn.disabled = true;
+    laterBtn.disabled = true;
+    nowBtn.textContent = 'Завантаження…';
+    if (progressWrap) progressWrap.classList.add('on');
+
+    const res = await window.slengUpdate.startInstall();
+    if (res && res.ok === false) {
+      // Показуємо помилку прямо в модальці замість native error-box
+      if (notesEl) {
+        notesEl.textContent = `Не вдалося завантажити оновлення:\n${res.error || 'невідома помилка'}`;
+      }
+      nowBtn.disabled = false;
+      laterBtn.disabled = false;
+      nowBtn.textContent = 'Спробувати знову';
+    }
+  });
+
+  window.slengUpdate.onStatus((info) => {
+    if (info && info.available) showPill(info);
+    else hidePill();
+  });
+
+  window.slengUpdate.onProgress((p) => {
+    if (!progressWrap || !progressWrap.classList.contains('on')) return;
+    const pct = Math.round((p.pct || 0) * 100);
+    if (progressFill)  progressFill.style.width = pct + '%';
+    if (progressLeft)  progressLeft.textContent = `${fmtMb(p.downloaded)} / ${fmtMb(p.total)} МБ`;
+    if (progressRight) progressRight.textContent = pct + '%';
+  });
+
+  window.slengUpdate.onInstalling(() => {
+    if (progressLeft)  progressLeft.textContent  = 'Запускаю інсталер…';
+    if (progressRight) progressRight.textContent = '';
+    nowBtn.textContent = 'Закриваюсь…';
+  });
+
+  window.slengUpdate.onError((msg) => {
+    if (notesEl) notesEl.textContent = `Помилка: ${msg}`;
+    if (progressWrap) progressWrap.classList.remove('on');
+    nowBtn.disabled = false;
+    laterBtn.disabled = false;
+    nowBtn.textContent = 'Спробувати знову';
+  });
+
+  // Може бути, що main вже завершив перевірку до того як ми сюди дійшли.
+  // Питаємо поточний статус і одразу показуємо pill якщо треба.
+  window.slengUpdate.getStatus().then((info) => {
+    if (info && info.available) showPill(info);
+  }).catch(() => {});
+})();
 
 const S = {
   file: null, videoInfo: null,
