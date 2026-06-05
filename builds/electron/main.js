@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu, dialog, clipboard } = require('electron');
+const { app, BrowserWindow, shell, Menu, dialog, clipboard, ipcMain } = require('electron');
 const path  = require('path');
 const fs    = require('fs');
 const os    = require('os');
@@ -13,6 +13,46 @@ let serverProcess  = null;
 let serverStderr   = '';     // зібраний stderr якщо процес впав
 let serverExitCode = null;   // exit code якщо процес закінчився передчасно
 let mainWindow     = null;
+
+function settingsPath() {
+  return path.join(app.getPath('userData'), 'settings.json');
+}
+
+function readSettings() {
+  try {
+    return JSON.parse(fs.readFileSync(settingsPath(), 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+function writeSettings(settings) {
+  const file = settingsPath();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(settings, null, 2), 'utf-8');
+}
+
+function getOutputDir() {
+  const dir = readSettings().outputDir || '';
+  return dir && fs.existsSync(dir) ? dir : '';
+}
+
+function setOutputDir(dir) {
+  const settings = readSettings();
+  settings.outputDir = dir || '';
+  writeSettings(settings);
+}
+
+function uniqueOutputPath(dir, filename) {
+  const parsed = path.parse(filename || 'video_unique.mp4');
+  let candidate = path.join(dir, parsed.base);
+  let i = 2;
+  while (fs.existsSync(candidate)) {
+    candidate = path.join(dir, `${parsed.name}_${i}${parsed.ext || '.mp4'}`);
+    i += 1;
+  }
+  return candidate;
+}
 
 // ── Шлях до server.exe (cross-platform) ──────────────────────────────────────
 function resourceDir() {
@@ -131,6 +171,32 @@ function startServer() {
   });
 }
 
+ipcMain.handle('settings:get-output-dir', () => getOutputDir());
+
+ipcMain.handle('settings:choose-output-dir', async () => {
+  const current = getOutputDir();
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Оберіть папку для готових відео',
+    defaultPath: current || app.getPath('videos'),
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (result.canceled || !result.filePaths.length) {
+    return { canceled: true, outputDir: current };
+  }
+  const outputDir = result.filePaths[0];
+  setOutputDir(outputDir);
+  return { canceled: false, outputDir };
+});
+
+function attachDownloadHandler(win) {
+  win.webContents.session.on('will-download', (event, item) => {
+    const outputDir = getOutputDir();
+    if (!outputDir) return;
+    const savePath = uniqueOutputPath(outputDir, item.getFilename());
+    item.setSavePath(savePath);
+  });
+}
+
 // ── Діагностичний діалог при невдалому старті ───────────────────────────────
 function showDiagnosticDialog(error) {
   const logPath = logFilePath();
@@ -244,9 +310,12 @@ async function createWindow() {
     webPreferences: {
       nodeIntegration:  false,
       contextIsolation: true,
+      preload:          path.join(__dirname, 'preload.js'),
       devTools:         true,    // тримаємо доступним для діагностики через Ctrl+Shift+I
     },
   });
+
+  attachDownloadHandler(mainWindow);
 
   // Прибираємо menubar повністю — професійний нативний look без зайвого File/Edit/View
   Menu.setApplicationMenu(null);
