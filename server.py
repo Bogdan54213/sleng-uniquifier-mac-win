@@ -409,6 +409,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _start_download(self):
         """POST /api/download — приймає {url}, повертає {job_id}."""
+        from auth import is_activated
         if not is_activated():
             self._json(403, {'error': 'not_activated'})
             return
