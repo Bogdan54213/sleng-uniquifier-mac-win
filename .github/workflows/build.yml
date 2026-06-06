@@ -125,7 +125,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install Python deps
-        run: pip install pyinstaller pillow
+        run: pip install pyinstaller pillow yt-dlp==2025.1.26
 
       # FFmpeg тепер НЕ комплектується в installer. Sleng при першому запуску
       # завантажує його з BtbN сам (ffmpeg_bootstrap.js) і кешує у %LOCALAPPDATA%.
@@ -288,7 +288,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install Python deps
-        run: pip3 install pyinstaller pillow
+        run: pip3 install pyinstaller pillow yt-dlp==2025.1.26
 
       - name: Install FFmpeg
         run: brew install ffmpeg
