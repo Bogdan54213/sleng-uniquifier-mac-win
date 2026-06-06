@@ -119,7 +119,11 @@ function runInstallerAndQuit(installerPath) {
 async function checkForUpdate() {
   let info;
   try {
-    info = await fetchJson(UPDATE_INFO_URL);
+    // Cache-bust query param — GitHub raw інколи серверує закешовану версію
+    // до ~5 хв після push. Додаємо ?t=timestamp щоб гарантовано отримати свіжу
+    // latest.json. Не впливає на серверну логіку (GitHub просто ігнорує).
+    const url = UPDATE_INFO_URL + '?t=' + Date.now();
+    info = await fetchJson(url);
   } catch (e) {
     console.log('[updater] check failed:', e.message);
     return { available: false, error: e.message };
