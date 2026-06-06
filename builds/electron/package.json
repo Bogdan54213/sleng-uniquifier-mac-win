@@ -1,6 +1,6 @@
 {
   "name": "sleng-uniquifier",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "description": "Sleng Uniquifier",
   "main": "main.js",
   "scripts": {
