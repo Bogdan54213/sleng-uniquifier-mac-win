@@ -1233,7 +1233,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.41</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.42</span>
     </div>
   </header>
 
@@ -2310,10 +2310,11 @@ async function startUrlDownload() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
     });
-    const d = await r.json();
-    if (!d.ok) {
-      const detail = d.detail || d.error || 'Невідома помилка';
-      showUrlError(detail);
+    let d;
+    try { d = await r.json(); } catch { d = null; }
+    if (!r.ok || !d || !d.ok) {
+      const detail = (d && (d.detail || d.error)) || `HTTP ${r.status}`;
+      showUrlError('Помилка сервера: ' + detail);
       btnUrlDownload.disabled = false;
       btnUrlDownload.textContent = 'Скачати';
       urlProgress.hidden = true;
@@ -2322,7 +2323,7 @@ async function startUrlDownload() {
     jobId = d.job_id;
     urlProgressText.textContent = `Завантаження з ${d.platform || 'URL'}…`;
   } catch (e) {
-    showUrlError('Сервер недоступний — перезапусти Sleng');
+    showUrlError('Сервер не відповідає: ' + (e.message || e));
     btnUrlDownload.disabled = false;
     btnUrlDownload.textContent = 'Скачати';
     urlProgress.hidden = true;

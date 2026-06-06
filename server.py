@@ -425,15 +425,34 @@ class Handler(BaseHTTPRequestHandler):
             self._json(400, {'error': 'invalid_url'})
             return
 
-        from downloader import start_download, detect_platform
-        platform = detect_platform(url)
-        if platform == 'unknown':
-            self._json(400, {'error': 'unsupported_platform',
-                             'detail': 'Підтримуються лише TikTok, Instagram, YouTube'})
+        # Імпорт обгорнутий у try — щоб якщо downloader.py / yt-dlp не зібрався
+        # PyInstaller'ом коректно, юзер бачив осмислену помилку, а не "Сервер
+        # недоступний". Часті причини: yt_dlp не в hiddenimports, або
+        # downloader.py не в datas.
+        try:
+            from downloader import start_download, detect_platform
+        except ImportError as e:
+            print(f"[ERR] /api/download import failed: {e}")
+            self._json(500, {
+                'error': 'downloader_unavailable',
+                'detail': f'Модуль завантаження не доступний: {e}'
+            })
             return
 
-        job_id = start_download(url)
-        self._json(200, {'ok': True, 'job_id': job_id, 'platform': platform})
+        try:
+            platform = detect_platform(url)
+            if platform == 'unknown':
+                self._json(400, {'error': 'unsupported_platform',
+                                 'detail': 'Підтримуються лише TikTok, Instagram, YouTube'})
+                return
+            job_id = start_download(url)
+            self._json(200, {'ok': True, 'job_id': job_id, 'platform': platform})
+        except Exception as e:
+            print(f"[ERR] /api/download crashed: {type(e).__name__}: {e}")
+            self._json(500, {
+                'error': 'server_error',
+                'detail': f'{type(e).__name__}: {e}'
+            })
 
     def _download_status(self, job_id: str):
         """GET /api/download/status/<job_id> — повертає прогрес/готовність."""
