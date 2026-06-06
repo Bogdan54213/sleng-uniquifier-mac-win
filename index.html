@@ -1233,7 +1233,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.40</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.41</span>
     </div>
   </header>
 
@@ -1350,7 +1350,7 @@ input { user-select: text; }
             <input class="auth-input url-input" id="urlInput" type="text"
                    placeholder="Встав посилання — TikTok, Instagram або YouTube"
                    autocomplete="off">
-            <button class="btn-go" id="btnDownload" type="button" style="margin-top:8px">
+            <button class="btn-go" id="btnUrlDownload" type="button" style="margin-top:8px">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="margin-right:6px">
                 <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
               </svg>
@@ -2262,7 +2262,7 @@ fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(
 // ────────────────────────────────────────────────────────────────────────────
 const urlPanel = $('urlPanel');
 const urlInput = $('urlInput');
-const btnDownload = $('btnDownload');
+const btnUrlDownload = $('btnUrlDownload');
 const urlProgress = $('urlProgress');
 const urlProgressFill = $('urlProgressFill');
 const urlProgressText = $('urlProgressText');
@@ -2297,8 +2297,8 @@ async function startUrlDownload() {
   if (!url) { showUrlError('Встав посилання на відео'); return; }
   if (!/^https?:\/\//i.test(url)) { showUrlError('URL має починатись з http(s)://'); return; }
 
-  btnDownload.disabled = true;
-  btnDownload.textContent = 'Скачую…';
+  btnUrlDownload.disabled = true;
+  btnUrlDownload.textContent = 'Скачую…';
   urlProgress.hidden = false;
   urlProgressFill.style.width = '0%';
   urlProgressText.textContent = 'Підготовка…';
@@ -2314,8 +2314,8 @@ async function startUrlDownload() {
     if (!d.ok) {
       const detail = d.detail || d.error || 'Невідома помилка';
       showUrlError(detail);
-      btnDownload.disabled = false;
-      btnDownload.textContent = 'Скачати';
+      btnUrlDownload.disabled = false;
+      btnUrlDownload.textContent = 'Скачати';
       urlProgress.hidden = true;
       return;
     }
@@ -2323,8 +2323,8 @@ async function startUrlDownload() {
     urlProgressText.textContent = `Завантаження з ${d.platform || 'URL'}…`;
   } catch (e) {
     showUrlError('Сервер недоступний — перезапусти Sleng');
-    btnDownload.disabled = false;
-    btnDownload.textContent = 'Скачати';
+    btnUrlDownload.disabled = false;
+    btnUrlDownload.textContent = 'Скачати';
     urlProgress.hidden = true;
     return;
   }
@@ -2349,15 +2349,15 @@ async function startUrlDownload() {
       } else if (s.status === 'error') {
         polling = false;
         showUrlError(s.error || 'Не вдалось завантажити');
-        btnDownload.disabled = false;
-        btnDownload.textContent = 'Скачати';
+        btnUrlDownload.disabled = false;
+        btnUrlDownload.textContent = 'Скачати';
         urlProgress.hidden = true;
       }
     } catch (e) {
       polling = false;
       showUrlError('Втрачено з\'єднання з сервером');
-      btnDownload.disabled = false;
-      btnDownload.textContent = 'Скачати';
+      btnUrlDownload.disabled = false;
+      btnUrlDownload.textContent = 'Скачати';
     }
   }
 }
@@ -2375,8 +2375,8 @@ async function onDownloadComplete(jobId, filename) {
     document.querySelectorAll('.src-tab').forEach(x => x.classList.toggle('on', x.dataset.src === 'file'));
     dz.hidden = false;
     urlPanel.hidden = true;
-    btnDownload.disabled = false;
-    btnDownload.textContent = 'Скачати';
+    btnUrlDownload.disabled = false;
+    btnUrlDownload.textContent = 'Скачати';
 
     await handleFile(file);
 
@@ -2389,7 +2389,7 @@ async function onDownloadComplete(jobId, filename) {
   }
 }
 
-btnDownload?.addEventListener('click', startUrlDownload);
+btnUrlDownload?.addEventListener('click', startUrlDownload);
 urlInput?.addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); startUrlDownload(); }
 });
