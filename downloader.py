@@ -111,6 +111,83 @@ def start_download(url: str) -> str:
     return job_id
 
 
+def _try_cobalt(url: str, job_id: str, platform: str) -> Optional[str]:
+    """Universal fallback через cobalt.tools — opensource API.
+
+    Підтримує: YouTube, Instagram, TikTok, Twitter, Reddit, Twitch, etc.
+    Без cookies, без login. Безкоштовно.
+
+    Flow:
+      1. POST https://api.cobalt.tools/ { url, videoQuality: 'max' }
+      2. Response: { status: 'tunnel'|'redirect', url: download_url }
+      3. Скачуємо файл за download_url як HTTP-стрім
+    """
+    import json
+    import urllib.request
+
+    out_dir = _downloads_dir()
+    try:
+        payload = json.dumps({
+            'url': url,
+            'videoQuality': 'max',     # 1080p+ де є
+            'audioFormat': 'best',
+            'filenameStyle': 'basic',
+        }).encode('utf-8')
+        req = urllib.request.Request(
+            'https://api.cobalt.tools/',
+            data=payload,
+            headers={
+                'Accept':       'application/json',
+                'Content-Type': 'application/json',
+                'User-Agent':   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                                'AppleWebKit/537.36 Chrome/120.0.0.0',
+            },
+            method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        print(f"[download] cobalt API fail: {e}")
+        return None
+
+    status = data.get('status')
+    if status == 'error':
+        print(f"[download] cobalt rejected: {data.get('error', data.get('text'))}")
+        return None
+
+    download_url = data.get('url')
+    if not download_url:
+        print(f"[download] cobalt: no download url in response (status={status})")
+        return None
+
+    print(f"[download] cobalt success: status={status}")
+    out_path = out_dir / f"{job_id}_{platform}.mp4"
+    try:
+        _upd(job_id, status='downloading', progress=20)
+        dl_req = urllib.request.Request(
+            download_url,
+            headers={'User-Agent': 'Mozilla/5.0'},
+        )
+        with urllib.request.urlopen(dl_req, timeout=120) as resp:
+            total = int(resp.headers.get('Content-Length', 0))
+            downloaded = 0
+            with open(out_path, 'wb') as f:
+                while True:
+                    chunk = resp.read(64 * 1024)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if total:
+                        pct = int(20 + (downloaded * 70 / total))
+                        _upd(job_id, progress=pct, downloaded=downloaded, total=total)
+        _upd(job_id, progress=95)
+        return str(out_path)
+    except Exception as e:
+        print(f"[download] cobalt direct download failed: {e}")
+        return None
+
+
 def _try_tikwm(url: str, job_id: str) -> Optional[str]:
     """TikTok fallback через tikwm.com API.
 
@@ -200,18 +277,32 @@ def _try_tikwm(url: str, job_id: str) -> Optional[str]:
 def _run_download(job_id: str, url: str) -> None:
     try:
         platform = detect_platform(url)
+        _upd(job_id, status='downloading', progress=5)
 
-        # TikTok-specific fallback: tikwm API (no cookies, no login).
-        # Робимо спочатку — багато публічних TikTok тепер вимагає login для
-        # yt-dlp прямого скачування. tikwm — third-party-API але стабільний.
+        # Платформи без cookies-блокування → специфічні API спочатку.
+        # 1) TikTok: tikwm (HD, без watermark)
+        # 2) YouTube / Instagram: cobalt.tools (universal API)
+        # 3) Якщо все впало — yt-dlp як останній шанс
         if platform == 'tiktok':
-            _upd(job_id, status='downloading', progress=5)
-            tikwm_result = _try_tikwm(url, job_id)
-            if tikwm_result and Path(tikwm_result).exists():
-                _upd(job_id, status='done', progress=100, file_path=tikwm_result)
+            res = _try_tikwm(url, job_id)
+            if res and Path(res).exists():
+                _upd(job_id, status='done', progress=100, file_path=res)
                 return
-            # Якщо tikwm впав → continue до yt-dlp fallback нижче
-            print("[download] tikwm failed, falling back to yt-dlp")
+            print("[download] tikwm failed, trying cobalt")
+            res = _try_cobalt(url, job_id, platform)
+            if res and Path(res).exists():
+                _upd(job_id, status='done', progress=100, file_path=res)
+                return
+            print("[download] cobalt failed, falling back to yt-dlp")
+
+        elif platform in ('youtube', 'instagram'):
+            # YouTube / IG агресивно блокують yt-dlp як бота.
+            # cobalt не має цих проблем (працює через серверну реалізацію).
+            res = _try_cobalt(url, job_id, platform)
+            if res and Path(res).exists():
+                _upd(job_id, status='done', progress=100, file_path=res)
+                return
+            print(f"[download] cobalt failed for {platform}, falling back to yt-dlp")
 
         # Імпорт yt_dlp всередині треда — щоб startup server.exe не блокувався
         # на ~500ms ініціалізації yt-dlp коли download не потрібен.
