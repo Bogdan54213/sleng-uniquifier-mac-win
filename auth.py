@@ -286,16 +286,11 @@ def validate_and_activate(code: str) -> bool:
     reg = get_registration()
 
     # ДІАГНОСТИКА — логуємо що Sleng реально обчислює.
-    # Хеш HMAC_SECRET (не plaintext!) видно у server.log щоб порівняти з очікуваним.
     secret_fp = hashlib.sha256(HMAC_SECRET.encode()).hexdigest()[:12]
+    current_mid = get_machine_id()
     print(f"[auth] validate_and_activate: input_code='{code}', "
-          f"HMAC_SECRET_fp={secret_fp}, len={len(HMAC_SECRET)}")
-    if reg:
-        expected = generate_activation_code(reg[1])
-        print(f"[auth] machine_id_in_db='{reg[1]}', "
-              f"expected_code='{expected}', input_normalized='{_normalize(code)}'")
-    else:
-        print("[auth] no registration in DB — only master-password works")
+          f"HMAC_SECRET_fp={secret_fp}, len={len(HMAC_SECRET)}, "
+          f"current_machine_id='{current_mid}'")
 
     # Адмін-пароль як майстер-код (активує на будь-якій машині).
     # Порівнюємо хеш — щоб у .exe не лежав plaintext.
@@ -316,19 +311,34 @@ def validate_and_activate(code: str) -> bool:
         # Master-password — локально вже сам по собі admin, JWT не критичний
         return True
 
-    if not reg:
-        return False
+    # HMAC код від бота — самодостатній. Сам факт що user має правильний код
+    # для свого machine_id означає що бот його авторизував. Окрема "реєстрація"
+    # у Sleng (форма ім'я+контакт) — лише формальність для legacy-flow.
+    # Тому перевіряємо HMAC проти ПОТОЧНОГО machine_id, незалежно від reg.
+    expected = generate_activation_code(current_mid)
+    print(f"[auth] expected_code='{expected}', "
+          f"input_normalized='{_normalize(code)}', match={_normalize(code) == _normalize(expected)}")
 
-    expected = generate_activation_code(reg[1])
     if _normalize(code) == _normalize(expected):
-        with _conn() as c:
-            c.execute('UPDATE auth SET status=?, code=? WHERE id=?',
-                      ('active', code, reg[0]))
-        # Якщо бот доступний — отримуємо JWT з роллю
-        jwt_pair = _fetch_jwt_from_bot(reg[1], code)
+        # Код валідний → створюємо/оновлюємо запис активації
+        if reg:
+            reg_id = reg[0]
+            with _conn() as c:
+                c.execute('UPDATE auth SET status=?, code=? WHERE id=?',
+                          ('active', code, reg_id))
+        else:
+            with _conn() as c:
+                cursor = c.execute(
+                    'INSERT INTO auth (machine_id, name, contact, status, code) '
+                    'VALUES (?,?,?,?,?)',
+                    (current_mid, 'TG User', '', 'active', code)
+                )
+                reg_id = cursor.lastrowid
+        # Отримуємо JWT від бота з роллю SUPER_ADMIN/CURATOR/STUDENT
+        jwt_pair = _fetch_jwt_from_bot(current_mid, code)
         if jwt_pair:
             token, role = jwt_pair
-            _save_jwt(reg[0], token, role)
+            _save_jwt(reg_id, token, role)
             print(f"[auth] JWT acquired (role={role})")
         return True
 
