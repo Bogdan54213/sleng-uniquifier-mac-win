@@ -124,7 +124,10 @@ def _try_tikwm(url: str, job_id: str) -> Optional[str]:
 
     out_dir = _downloads_dir()
     try:
-        api_url = f"https://www.tikwm.com/api/?url={urllib.request.quote(url, safe=':/?&=')}"
+        # КЛЮЧОВЕ: &hd=1 змушує tikwm повернути hdplay (1080p) якщо воно є.
+        # Без цього параметра tikwm часто приховує HD за payment-режимом.
+        encoded = urllib.request.quote(url, safe=':/?&=')
+        api_url = f"https://www.tikwm.com/api/?url={encoded}&hd=1"
         req = urllib.request.Request(
             api_url,
             headers={
@@ -148,7 +151,10 @@ def _try_tikwm(url: str, job_id: str) -> Optional[str]:
     play_url = info.get('hdplay') or info.get('play') or info.get('wmplay')
     used_quality = ('hdplay' if info.get('hdplay')
                     else 'play' if info.get('play') else 'wmplay')
-    print(f"[download] tikwm chose quality: {used_quality}")
+    # Детальний лог: розміри з API щоб юзер бачив що насправді доступно
+    sz_play   = info.get('size', 0)
+    sz_hdplay = info.get('hd_size', 0)
+    print(f"[download] tikwm sizes: play={sz_play}B hdplay={sz_hdplay}B → chose: {used_quality}")
     if not play_url:
         print("[download] tikwm: no play url in response")
         return None
