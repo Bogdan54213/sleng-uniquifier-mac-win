@@ -1233,7 +1233,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.44</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.45</span>
     </div>
   </header>
 
@@ -2698,14 +2698,41 @@ function showResult(data) {
   switchTo(secResult);
 }
 
-btnDownload.addEventListener('click', () => {
+btnDownload.addEventListener('click', async () => {
   if (!S.jobId && !S.result?.job_id) return;
   const jobId    = S.jobId || S.result?.job_id;
   const filename = S.result?.filename || 'video_unique.mp4';
+
+  // Тригеримо завантаження через <a download>. Electron `will-download`
+  // handler (main.js) перехоплює, кладе у вибрану outputDir без діалогу.
   const a = document.createElement('a');
   a.href = `/download/${jobId}`;
   a.download = filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
+
+  // Feedback: тимчасово міняємо текст кнопки + показуємо де збережено
+  const originalHtml = btnDownload.innerHTML;
+  btnDownload.disabled = true;
+  // Показуємо куди саме зберіглось — з outputDir (якщо вибрана) або 'Завантаження'
+  let savePath = '';
+  try {
+    if (window.slengSettings?.getOutputDir) {
+      savePath = await window.slengSettings.getOutputDir();
+    }
+  } catch {}
+  btnDownload.innerHTML = '✓ Збережено' + (savePath ? ` у ${savePath.split(/[\\/]/).pop()}` : '');
+
+  showToast(savePath
+    ? `Збережено у ${savePath}`
+    : 'Збережено у папку Завантаження', 'ok', 3500);
+
+  // Через 2.5с повертаємо кнопку назад або переходимо на upload screen
+  setTimeout(() => {
+    btnDownload.disabled = false;
+    btnDownload.innerHTML = originalHtml;
+    // Автоматичний перехід на upload screen щоб юзер міг обробити нове
+    btnAgain?.click();
+  }, 2500);
 });
 
 btnAgain.addEventListener('click', () => {

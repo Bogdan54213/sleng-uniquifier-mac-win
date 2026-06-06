@@ -143,7 +143,12 @@ def _try_tikwm(url: str, job_id: str) -> Optional[str]:
         return None
 
     info = data.get('data') or {}
-    play_url = info.get('play') or info.get('wmplay')
+    # Найвища якість: hdplay (1080p) → play (720p без watermark) → wmplay (з watermark)
+    # Деякі відео не мають hdplay — для них play це і є максимальна якість.
+    play_url = info.get('hdplay') or info.get('play') or info.get('wmplay')
+    used_quality = ('hdplay' if info.get('hdplay')
+                    else 'play' if info.get('play') else 'wmplay')
+    print(f"[download] tikwm chose quality: {used_quality}")
     if not play_url:
         print("[download] tikwm: no play url in response")
         return None
