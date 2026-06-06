@@ -63,21 +63,32 @@ def detect_platform(url: str) -> str:
 
 
 def _yt_dlp_options(out_template: str, on_progress: Callable[[dict], None]) -> dict:
-    """Стандартні опції yt-dlp без cookies, у найвищій якості mp4."""
+    """Стандартні опції yt-dlp без cookies, у найвищій якості mp4.
+
+    Для YouTube використовуємо android/ios player clients замість web —
+    вони не вимагають login/cookies для більшості публічних відео і
+    обходять bot-detection. Це industry-standard трюк для yt-dlp у CI.
+    """
     return {
         'outtmpl': out_template,
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
         # Найвища якість mp4 (відео + аудіо склеєне, до 1080p+).
-        # 'best' fallback якщо немає mp4 (наприклад, TikTok інколи).
         'format': 'bv*+ba/best',
         'merge_output_format': 'mp4',
-        # Прогрес через hook замість парсингу stdout.
         'progress_hooks': [on_progress],
-        # Не лізти в браузерні куки (інакше yt-dlp шукає сесії у Chrome/Firefox).
         'cookiesfrombrowser': None,
-        # Соц.мережі люблять блокувати ботів за UA, прикидаємось браузером.
+        # ключове для YouTube: android client не вимагає login для public відео
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'ios', 'mweb', 'web'],
+                'player_skip': ['configs'],
+            },
+            'youtubetab': {
+                'skip': ['authcheck'],
+            },
+        },
         'http_headers': {
             'User-Agent': (
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -85,9 +96,7 @@ def _yt_dlp_options(out_template: str, on_progress: Callable[[dict], None]) -> d
                 'Chrome/120.0.0.0 Safari/537.36'
             ),
         },
-        # Таймаут на з'єднання — щоб не висіти безкінечно.
         'socket_timeout': 30,
-        # Retry на тимчасові помилки (5xx, network).
         'retries': 3,
     }
 
@@ -111,56 +120,75 @@ def start_download(url: str) -> str:
     return job_id
 
 
+# Cobalt має багато community-instances. Головний api.cobalt.tools часто
+# rate-limited або зовсім вимкнений. Пробуємо по черзі — перша що дасть
+# відповідь з download URL виграла.
+COBALT_INSTANCES = [
+    'https://api.cobalt.tools/',
+    'https://cobalt.callow.uk/api/json',
+    'https://co.eepy.today/api/json',
+    'https://cobalt-api.kwiatekmiki.com/api/json',
+    'https://cobalt.synzr.ru/api/json',
+]
+
+
 def _try_cobalt(url: str, job_id: str, platform: str) -> Optional[str]:
-    """Universal fallback через cobalt.tools — opensource API.
+    """Universal fallback через cobalt.tools та community-mirrors.
 
-    Підтримує: YouTube, Instagram, TikTok, Twitter, Reddit, Twitch, etc.
-    Без cookies, без login. Безкоштовно.
-
-    Flow:
-      1. POST https://api.cobalt.tools/ { url, videoQuality: 'max' }
-      2. Response: { status: 'tunnel'|'redirect', url: download_url }
-      3. Скачуємо файл за download_url як HTTP-стрім
+    Пробуємо ~5 інстансів. Перша відповідь зі статусом tunnel/redirect та
+    URL виграла. Без cookies, без login.
     """
     import json
     import urllib.request
 
-    out_dir = _downloads_dir()
-    try:
-        payload = json.dumps({
-            'url': url,
-            'videoQuality': 'max',     # 1080p+ де є
-            'audioFormat': 'best',
-            'filenameStyle': 'basic',
-        }).encode('utf-8')
-        req = urllib.request.Request(
-            'https://api.cobalt.tools/',
-            data=payload,
-            headers={
-                'Accept':       'application/json',
-                'Content-Type': 'application/json',
-                'User-Agent':   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                                'AppleWebKit/537.36 Chrome/120.0.0.0',
-            },
-            method='POST',
-        )
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-    except Exception as e:
-        print(f"[download] cobalt API fail: {e}")
-        return None
+    download_url = None
+    used_instance = None
 
-    status = data.get('status')
-    if status == 'error':
-        print(f"[download] cobalt rejected: {data.get('error', data.get('text'))}")
-        return None
+    for instance in COBALT_INSTANCES:
+        try:
+            payload = json.dumps({
+                'url': url,
+                'videoQuality': 'max',
+                'audioFormat': 'best',
+                'filenameStyle': 'basic',
+            }).encode('utf-8')
+            req = urllib.request.Request(
+                instance,
+                data=payload,
+                headers={
+                    'Accept':       'application/json',
+                    'Content-Type': 'application/json',
+                    'User-Agent':   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                                    'AppleWebKit/537.36 Chrome/120.0.0.0',
+                },
+                method='POST',
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+        except Exception as e:
+            print(f"[download] cobalt {instance}: {type(e).__name__}: {e}")
+            continue
 
-    download_url = data.get('url')
+        status = data.get('status')
+        if status == 'error':
+            print(f"[download] cobalt {instance} rejected: "
+                  f"{data.get('error', data.get('text'))}")
+            continue
+
+        candidate_url = data.get('url')
+        if candidate_url:
+            download_url = candidate_url
+            used_instance = instance
+            print(f"[download] cobalt success via {instance} (status={status})")
+            break
+        else:
+            print(f"[download] cobalt {instance}: no url (status={status})")
+
     if not download_url:
-        print(f"[download] cobalt: no download url in response (status={status})")
+        print(f"[download] all {len(COBALT_INSTANCES)} cobalt instances failed")
         return None
 
-    print(f"[download] cobalt success: status={status}")
+    out_dir = _downloads_dir()
     out_path = out_dir / f"{job_id}_{platform}.mp4"
     try:
         _upd(job_id, status='downloading', progress=20)
@@ -182,9 +210,10 @@ def _try_cobalt(url: str, job_id: str, platform: str) -> Optional[str]:
                         pct = int(20 + (downloaded * 70 / total))
                         _upd(job_id, progress=pct, downloaded=downloaded, total=total)
         _upd(job_id, progress=95)
+        print(f"[download] cobalt downloaded {downloaded}B from {used_instance}")
         return str(out_path)
     except Exception as e:
-        print(f"[download] cobalt direct download failed: {e}")
+        print(f"[download] cobalt download stream failed: {e}")
         return None
 
 
