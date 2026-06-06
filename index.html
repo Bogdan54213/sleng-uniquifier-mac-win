@@ -1157,7 +1157,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.32</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.33</span>
     </div>
   </header>
 
@@ -2048,6 +2048,8 @@ btnCopyCode?.addEventListener('click', () => {
 });
 
 $('btnHelp')?.addEventListener('click', () => {
+  // Гайд тільки про роботу з унифікатором — без жодних згадок про hotkeys,
+  // DevTools чи admin shortcut'и. Студенти не повинні навіть знати що такі речі є.
   showModal('Sleng Uniquifier — швидкий гайд', `
     <ol>
       <li>Перетягни відео у ліву картку <strong>«Відео»</strong></li>
@@ -2055,10 +2057,9 @@ $('btnHelp')?.addEventListener('click', () => {
       <li>(Опційно) увімкни технічні опції під списком пресетів</li>
       <li>Тицяй жовту кнопку <strong>«Запустити»</strong> внизу</li>
     </ol>
-    <p style="margin-top:12px;color:var(--text-muted);font-size:11.5px">Гарячі клавіші:</p>
-    <ul style="list-style:none;padding-left:0">
-      <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd> — DevTools (для діагностики)</li>
-    </ul>
+    <p style="margin-top:14px;color:var(--text-dim);font-size:11.5px;line-height:1.5">
+      💡 Якщо щось не працює — напиши куратору у Telegram.
+    </p>
   `);
 });
 

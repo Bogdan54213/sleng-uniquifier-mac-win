@@ -392,9 +392,17 @@ async function createWindow() {
     mainWindow.webContents.on('before-input-event', (event, input) => {
       const isDevTools =
         (input.control && input.shift && input.key.toLowerCase() === 'i') ||
-        input.key === 'F12';
+        input.key === 'F12' ||
+        // Ctrl+U (view source) — нативно у Chromium, відкриває код у новому вікні
+        (input.control && input.key.toLowerCase() === 'u') ||
+        // Ctrl+S — Chromium «зберегти як» — може показати HTML
+        (input.control && input.key.toLowerCase() === 's' && !input.shift);
       if (isDevTools) event.preventDefault();
     });
+
+    // Блокуємо native context-menu (правий клік) у production — щоб не було
+    // 'Inspect' / 'View page source' / 'Save as'. У dev-режимі лишається.
+    mainWindow.webContents.on('context-menu', (event) => event.preventDefault());
   }
 
   // Прибираємо menubar повністю — професійний нативний look без зайвого File/Edit/View
