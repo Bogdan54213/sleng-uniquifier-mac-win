@@ -111,8 +111,97 @@ def start_download(url: str) -> str:
     return job_id
 
 
+def _try_tikwm(url: str, job_id: str) -> Optional[str]:
+    """TikTok fallback через tikwm.com API.
+
+    Не потребує cookies, тягне public TikTok без watermark.
+    Повертає шлях до скачаного .mp4 або None при провалі.
+    Логіка: tikwm віддає JSON з data.play (no watermark) → ми качаємо
+    урла за тим лінком як звичайний HTTP файл.
+    """
+    import json
+    import urllib.request
+
+    out_dir = _downloads_dir()
+    try:
+        api_url = f"https://www.tikwm.com/api/?url={urllib.request.quote(url, safe=':/?&=')}"
+        req = urllib.request.Request(
+            api_url,
+            headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                              'AppleWebKit/537.36 Chrome/120.0.0.0',
+            },
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        print(f"[download] tikwm API fail: {e}")
+        return None
+
+    if data.get('code') != 0:
+        print(f"[download] tikwm rejected: {data.get('msg')}")
+        return None
+
+    info = data.get('data') or {}
+    play_url = info.get('play') or info.get('wmplay')
+    if not play_url:
+        print("[download] tikwm: no play url in response")
+        return None
+
+    # tikwm повертає шляхи на свій CDN — додаємо https://
+    if play_url.startswith('//'):
+        play_url = 'https:' + play_url
+    elif play_url.startswith('/'):
+        play_url = 'https://www.tikwm.com' + play_url
+
+    title = (info.get('title') or 'tiktok').strip()
+    # Безпечне ім'я файлу — прибираємо спецсимволи
+    safe_title = re.sub(r'[^\w\-.\s]', '_', title)[:80]
+    out_path = out_dir / f"{job_id}_{safe_title}.mp4"
+
+    try:
+        _upd(job_id, status='downloading', progress=20,
+             title=info.get('title', ''))
+        req = urllib.request.Request(
+            play_url,
+            headers={'User-Agent': 'Mozilla/5.0'},
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            total = int(resp.headers.get('Content-Length', 0))
+            downloaded = 0
+            with open(out_path, 'wb') as f:
+                while True:
+                    chunk = resp.read(64 * 1024)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if total:
+                        pct = int(20 + (downloaded * 70 / total))  # 20→90%
+                        _upd(job_id, progress=pct, downloaded=downloaded, total=total)
+        _upd(job_id, progress=95)
+        return str(out_path)
+    except Exception as e:
+        print(f"[download] tikwm direct download failed: {e}")
+        return None
+
+
 def _run_download(job_id: str, url: str) -> None:
     try:
+        platform = detect_platform(url)
+
+        # TikTok-specific fallback: tikwm API (no cookies, no login).
+        # Робимо спочатку — багато публічних TikTok тепер вимагає login для
+        # yt-dlp прямого скачування. tikwm — third-party-API але стабільний.
+        if platform == 'tiktok':
+            _upd(job_id, status='downloading', progress=5)
+            tikwm_result = _try_tikwm(url, job_id)
+            if tikwm_result and Path(tikwm_result).exists():
+                _upd(job_id, status='done', progress=100, file_path=tikwm_result)
+                return
+            # Якщо tikwm впав → continue до yt-dlp fallback нижче
+            print("[download] tikwm failed, falling back to yt-dlp")
+
         # Імпорт yt_dlp всередині треда — щоб startup server.exe не блокувався
         # на ~500ms ініціалізації yt-dlp коли download не потрібен.
         import yt_dlp
