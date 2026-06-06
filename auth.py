@@ -7,6 +7,7 @@ import sqlite3
 import subprocess
 import sys
 from pathlib import Path
+from typing import Optional, Tuple
 
 try:
     from config import HMAC_SECRET, ADMIN_PASSWORD_HASH
@@ -14,6 +15,13 @@ except ImportError:
     # Dev fallback. SHA256('sleng2024') — для запуску без config.py.
     HMAC_SECRET = "CHANGE_THIS_SECRET_32CHARS!!"
     ADMIN_PASSWORD_HASH = "c8a7c7be0e5f47f7fc25d3f06be6e1f9b5bce67c1e3f76dd6a0e3b3c4ae6e8c5"
+
+# URL Telegram-бота — auth-server для видачі JWT з роллю.
+# На production буде Railway public URL. Локально для тестів — localhost:8080.
+try:
+    from config import BOT_AUTH_URL
+except ImportError:
+    BOT_AUTH_URL = "http://localhost:8080"
 
 
 def _hash_password(plain: str) -> str:
@@ -47,6 +55,17 @@ def init_db():
             code       TEXT,
             created_at TEXT DEFAULT (datetime('now'))
         )''')
+        # JWT з бота — зберігаємо токен + роль + час оновлення.
+        # Додаємо ALTER через try, щоб не падало на старій БД де колонок ще нема.
+        for ddl in (
+            "ALTER TABLE auth ADD COLUMN jwt_token TEXT",
+            "ALTER TABLE auth ADD COLUMN jwt_role TEXT",
+            "ALTER TABLE auth ADD COLUMN jwt_updated_at TEXT",
+        ):
+            try:
+                c.execute(ddl)
+            except sqlite3.OperationalError:
+                pass  # колонка вже існує
 
 
 # ── Machine ID ────────────────────────────────────────────────────────────────
@@ -183,8 +202,86 @@ def generate_activation_code(machine_id: str) -> str:
     return f"{raw[:4]}-{raw[4:8]}-{raw[8:12]}"
 
 
+def _fetch_jwt_from_bot(machine_id: str, code: str) -> Optional[tuple[str, str]]:
+    """Звертається до bot HTTP API /api/sleng/auth для отримання JWT.
+
+    Повертає (token, role) при успіху, None при будь-якій помилці.
+    НЕ блокує активацію якщо бот недоступний — це опціональний enrichment.
+    Таймаут жорсткий (5с) — не хочемо вішати UX через повільну мережу.
+    """
+    import json
+    import urllib.request
+    import urllib.error
+
+    try:
+        payload = json.dumps({"machine_id": machine_id, "code": code}).encode("utf-8")
+        req = urllib.request.Request(
+            f"{BOT_AUTH_URL}/api/sleng/auth",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            token = data.get("token")
+            role = data.get("role")
+            if token and role:
+                return token, role
+    except urllib.error.HTTPError as e:
+        # 403 = invalid_code / no_activation_record / blocked. Це не наша проблема —
+        # локальний HMAC уже пройшов. Логуємо і продовжуємо без JWT.
+        try:
+            body = e.read().decode("utf-8")
+        except Exception:
+            body = str(e)
+        print(f"[auth] bot rejected: HTTP {e.code} {body}")
+    except Exception as e:
+        # Бот offline / DNS fail / timeout — нічого страшного, fallback на legacy
+        print(f"[auth] bot unreachable: {type(e).__name__}: {e}")
+    return None
+
+
+def _save_jwt(reg_id: int, token: str, role: str) -> None:
+    """Зберігає JWT у БД для подальших admin-перевірок."""
+    with _conn() as c:
+        c.execute(
+            "UPDATE auth SET jwt_token=?, jwt_role=?, jwt_updated_at=datetime('now') "
+            "WHERE id=?",
+            (token, role, reg_id),
+        )
+
+
+def get_jwt() -> Optional[tuple[str, str]]:
+    """Повертає (token, role) поточного користувача або None.
+
+    Не валідує signature тут — це робить bot/server.py через verify.
+    """
+    with _conn() as c:
+        row = c.execute(
+            "SELECT jwt_token, jwt_role FROM auth WHERE jwt_token IS NOT NULL "
+            "ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+    if row and row[0]:
+        return row[0], row[1] or "STUDENT"
+    return None
+
+
+def is_admin() -> bool:
+    """True якщо JWT.role належить до SUPER_ADMIN/CURATOR."""
+    jwt = get_jwt()
+    if not jwt:
+        return False
+    _, role = jwt
+    return role in ("SUPER_ADMIN", "CURATOR")
+
+
 def validate_and_activate(code: str) -> bool:
-    """Перевіряє код і активує якщо вірний. Повертає True при успіху."""
+    """Перевіряє код і активує якщо вірний. Повертає True при успіху.
+
+    Після успішної локальної валідації — фоном запитує JWT з бота
+    і зберігає його разом з роллю. Якщо бот недоступний — активація
+    все одно проходить, але без role (admin-доступу не буде).
+    """
     init_db()
     reg = get_registration()
 
@@ -194,14 +291,17 @@ def validate_and_activate(code: str) -> bool:
         if not reg:
             mid = get_machine_id()
             with _conn() as c:
-                c.execute(
+                cursor = c.execute(
                     'INSERT INTO auth (machine_id, name, contact, status, code) VALUES (?,?,?,?,?)',
                     (mid, 'Admin', '', 'active', code)
                 )
+                reg_id = cursor.lastrowid
         else:
+            reg_id = reg[0]
             with _conn() as c:
                 c.execute('UPDATE auth SET status=?, code=? WHERE id=?',
-                          ('active', code, reg[0]))
+                          ('active', code, reg_id))
+        # Master-password — локально вже сам по собі admin, JWT не критичний
         return True
 
     if not reg:
@@ -212,6 +312,12 @@ def validate_and_activate(code: str) -> bool:
         with _conn() as c:
             c.execute('UPDATE auth SET status=?, code=? WHERE id=?',
                       ('active', code, reg[0]))
+        # Якщо бот доступний — отримуємо JWT з роллю
+        jwt_pair = _fetch_jwt_from_bot(reg[1], code)
+        if jwt_pair:
+            token, role = jwt_pair
+            _save_jwt(reg[0], token, role)
+            print(f"[auth] JWT acquired (role={role})")
         return True
 
     return False

@@ -142,14 +142,21 @@ class Handler(BaseHTTPRequestHandler):
     # ── Auth API ──────────────────────────────────────────────────────────────
 
     def _auth_status(self):
-        from auth import is_activated, get_registration, get_machine_id
+        from auth import is_activated, get_registration, get_machine_id, get_jwt
         reg = get_registration()
+        jwt_pair = get_jwt()
         self._json(200, {
             'activated':  is_activated(),
             'registered': reg is not None,
             'machine_id': get_machine_id(),
             'name':       reg[2] if reg else '',
             'contact':    reg[3] if reg else '',
+            # JWT-роль — потрібна frontend'у для приховування/показу admin features.
+            # Якщо JWT нема (бот був недоступний при активації, або стара версія) —
+            # role='STUDENT' за замовчуванням, admin-features недоступні.
+            # Master-password все ще працює як emergency fallback через
+            # _hash_password в validate_and_activate.
+            'role':       (jwt_pair[1] if jwt_pair else 'STUDENT'),
         })
 
     def _runtime_status(self):

@@ -1156,7 +1156,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.27</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.28</span>
     </div>
   </header>
 
@@ -1696,6 +1696,10 @@ const S = {
   xhr: null, sse: null,
   adminAuthed: false,
   adminPassword: '',
+  // Роль з JWT (через /api/auth/status). Заповнюється при старті.
+  // Допустимі: 'SUPER_ADMIN' / 'CURATOR' / 'STUDENT'.
+  // Для STUDENT — Ctrl+Shift+A не відкриває admin overlay, кнопка лога теж прихована.
+  role: 'STUDENT',
 };
 
 const PRESET_UI = {
@@ -1831,6 +1835,9 @@ async function initAuth() {
   try {
     const r = await fetch('/api/auth/status');
     const d = await r.json();
+    // Тягнемо role з JWT — це визначає чи показувати admin features.
+    // Для STUDENT — Ctrl+Shift+A заблокований, лоб'юка прихована (вже [hidden] у HTML).
+    S.role = d.role || 'STUDENT';
     if (d.activated) showMainApp();
     else if (d.registered) { pendingMid.textContent = d.machine_id || '—'; switchToAuth(secPending); }
     else switchToAuth(secRegister);
@@ -1951,6 +1958,13 @@ if (_logoEl) {
 $('btnAdminTrigger')?.addEventListener('click', openAdminOverlay);
 
 function openAdminOverlay() {
+  // RBAC gate — admin overlay не відкривається для не-admin ролей.
+  // Захищає від атаки '5 кліків по лого' / Ctrl+Shift+A зі сторони студента
+  // який якось вижив після обфускації і знає про hidden hotkey.
+  if (S.role !== 'SUPER_ADMIN' && S.role !== 'CURATOR') {
+    console.log('[admin] access denied: role=' + S.role);
+    return;
+  }
   adminOverlay.classList.remove('off');
   fetch('/api/auth/status').then(r=>r.json()).then(d=>{
     if (d.machine_id) adminMyMid.textContent = d.machine_id;
