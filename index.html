@@ -1157,7 +1157,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.38</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.39</span>
     </div>
   </header>
 
@@ -1174,24 +1174,28 @@ input { user-select: text; }
                 <img src="/assets/brand-logo.png" alt="" aria-hidden="true">
               </div>
               <div class="auth-hero-title">Активація доступу</div>
-              <div class="auth-hero-sub">Введи дані, щоб адміністратор видав код для цього пристрою.</div>
+              <div class="auth-hero-sub">Обери відповідний варіант — учень курсу чи член команди.</div>
             </div>
 
-            <button class="btn-go" id="btnQuickLogin">
+            <button class="btn-go" id="btnStudentLogin">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
                 <path d="M22.05 2.45a1.5 1.5 0 0 0-1.55-.27L2.4 9.04c-1.15.42-1.18 2.04-.04 2.5l4.39 1.74 2.05 6.6c.14.46.46.83.89 1.03.42.2.92.2 1.34-.01.2-.1.39-.22.55-.4l2.71-2.84 4.77 3.51c.27.2.6.32.94.34.93.04 1.74-.62 1.91-1.55l2.7-15.36c.1-.6-.13-1.21-.6-1.6zM9.5 14.7l-.8 2.6-1.7-5.5L18.9 5.4 9.5 14.7z"/>
               </svg>
-              Увійти через Telegram
+              Я студент курсу
             </button>
-            <p class="auth-hint">Тицяй — Traffic Sleng Bot пришле код у DM.</p>
+            <p class="auth-hint">Учні Traffic Sleng Education — отримати код через бота.</p>
 
-            <div class="divider-text">або вручну</div>
+            <button class="btn-go btn-secondary" id="btnTeamLogin" style="margin-top:10px">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+              </svg>
+              Я в команді (трафер)
+            </button>
+            <p class="auth-hint">Не учень? Адмін додасть тебе вручну.</p>
 
-            <input class="auth-input" id="regName"    type="text" placeholder="Твоє ім'я" autocomplete="off">
-            <input class="auth-input" id="regContact" type="text" placeholder="Telegram @username (необов'язково)" autocomplete="off">
-            <div class="auth-err" id="regErr"></div>
-            <button class="btn-go btn-secondary" id="btnRegister">Відправити заявку</button>
-            <p class="auth-hint">У мене вже є код? <a id="linkHaveCode">Ввести код активації</a></p>
+            <p class="auth-hint" style="margin-top:14px;text-align:center">
+              У мене вже є код — <a id="linkHaveCode">ввести код активації</a>
+            </p>
           </div>
         </div>
       </div>
@@ -1866,7 +1870,10 @@ function switchToAuth(sec) {
 }
 
 const TELEGRAM_BOT_USERNAME = 'tst_education_bot';
-$('btnQuickLogin')?.addEventListener('click', async () => {
+
+// «Я студент курсу» — стандартний deep-link flow. Бот при отриманні
+// перевіряє чи юзер є студентом і відповідає або кодом, або відмовою.
+$('btnStudentLogin')?.addEventListener('click', async () => {
   let mid = '';
   try { const r = await fetch('/api/auth/status'); const d = await r.json(); mid = d.machine_id || ''; } catch {}
   if (!mid) { showToast('Не вдалось отримати Machine ID. Перевір що сервер запущений.', 'err'); return; }
@@ -1875,6 +1882,47 @@ $('btnQuickLogin')?.addEventListener('click', async () => {
   else window.open(url, '_blank');
   pendingMid.textContent = mid;
   switchToAuth(secPending);
+});
+
+// «Я в команді (трафер)» — НЕ відкриває бот. Показує модал з machine_id
+// та інструкцію переслати його адміну. Адмін додає у /team_code →
+// пересилає код колезі → той вводить.
+$('btnTeamLogin')?.addEventListener('click', async () => {
+  let mid = '';
+  try { const r = await fetch('/api/auth/status'); const d = await r.json(); mid = d.machine_id || ''; } catch {}
+  if (!mid) { showToast('Не вдалось отримати Machine ID', 'err'); return; }
+
+  showModal('🧑‍💼 Доступ для команди', `
+    <p style="margin:0 0 14px;color:var(--text-main);line-height:1.5">
+      Якщо ти у команді Traffic Sleng (не учень курсу) —
+      попроси адміна додати тебе вручну.
+    </p>
+    <div style="background:var(--bg-card);border:1px solid var(--border-soft);
+                border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:10px;color:var(--text-dim);letter-spacing:.06em;
+                  text-transform:uppercase;margin-bottom:4px">Твій Machine ID</div>
+      <div style="font-family:var(--font-mono);font-size:13px;color:var(--yellow);
+                  letter-spacing:.02em;user-select:all">${mid}</div>
+    </div>
+    <button class="btn-go btn-sm-blue" id="btnCopyTeamMid"
+            style="width:100%;margin-bottom:14px">📋 Скопіювати Machine ID</button>
+    <p style="margin:0;color:var(--text-muted);font-size:11.5px;line-height:1.5">
+      <b>Що робити:</b><br>
+      1. Скопіюй Machine ID (кнопка вище)<br>
+      2. Перешли його адміну в Telegram (DM, не в бот!)<br>
+      3. Він додасть тебе у команду і пришле код активації<br>
+      4. Натисни «у мене вже є код» внизу і встав його
+    </p>
+  `);
+  // Wire copy button inside modal
+  setTimeout(() => {
+    document.getElementById('btnCopyTeamMid')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(mid).then(() => {
+        const btn = document.getElementById('btnCopyTeamMid');
+        if (btn) { btn.textContent = '✓ Скопійовано'; setTimeout(() => btn.textContent = '📋 Скопіювати Machine ID', 1500); }
+      });
+    });
+  }, 50);
 });
 
 btnRegister?.addEventListener('click', async () => {
