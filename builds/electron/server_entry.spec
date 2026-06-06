@@ -17,6 +17,7 @@ a = Analysis(
         (str(ROOT / 'auth.py'),       '.'),
         (str(ROOT / 'bot_notify.py'), '.'),
         (str(ROOT / 'config.py'),     '.'),
+        (str(ROOT / 'downloader.py'), '.'),
         # Шрифти бренд-стилю — Orbitron (logo) + CascadiaCode (mono)
         (str(ROOT / 'fonts'),         'fonts'),
         (str(ROOT / 'assets'),        'assets'),
@@ -27,6 +28,7 @@ a = Analysis(
         'auth',
         'bot_notify',
         'config',
+        'downloader',
         'http.server',
         'socketserver',
         'webbrowser',
@@ -36,6 +38,10 @@ a = Analysis(
         'hmac',
         'hashlib',
         'urllib.request',
+        # yt-dlp — для завантаження TikTok / Instagram / YouTube без cookies
+        'yt_dlp',
+        'yt_dlp.extractor',
+        'yt_dlp.extractor.lazy_extractors',
     ],
     hookspath=[],
     runtime_hooks=[],

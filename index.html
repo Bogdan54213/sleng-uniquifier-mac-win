@@ -439,7 +439,83 @@ input { user-select: text; }
 }
 .card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; overflow: auto; }
 
+/* SOURCE TABS — перемикач 'файл з ПК' / 'URL' над dz */
+.src-tabs {
+  display: flex; gap: 4px;
+  background: var(--bg-control);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+.src-tab {
+  flex: 1;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font-size: 11.5px; font-weight: 500;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.src-tab:hover { color: var(--text-main); }
+.src-tab.on {
+  background: var(--bg-panel);
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+/* URL PANEL — форма для скачки з TikTok/Insta/YouTube */
+.url-panel { flex: 1; display: flex; flex-direction: column; gap: 10px; padding-top: 6px; }
+.url-panel[hidden] { display: none; }
+.url-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.url-platforms {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  letter-spacing: .01em;
+  margin-top: 4px;
+}
+.url-progress {
+  margin-top: 4px;
+}
+.url-progress[hidden] { display: none; }
+.url-progress-bar {
+  position: relative;
+  width: 100%; height: 5px;
+  background: rgba(255,255,255,.06);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.url-progress-fill {
+  position: absolute; inset: 0 auto 0 0;
+  width: 0%;
+  background: var(--yellow);
+  transition: width .25s ease;
+}
+.url-progress-text {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.url-error {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.35);
+  border-radius: var(--radius-xs);
+  color: var(--danger);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.url-error[hidden] { display: none; }
+
 /* DROP ZONE — Linear plain dashed area */
+.dz[hidden] { display: none; }
 .dz {
   position: relative;
   flex: 1;
@@ -1157,7 +1233,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.39</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.40</span>
     </div>
   </header>
 
@@ -1242,9 +1318,20 @@ input { user-select: text; }
       <section class="card">
         <div class="card-head">
           <div class="card-title">Відео</div>
-          <div class="card-sub">Додай файл, який потрібно унікалізувати.</div>
+          <div class="card-sub">Завантаж з ПК або скачай з TikTok / Instagram / YouTube.</div>
         </div>
         <div class="card-body">
+          <!-- Перемикач режиму: локальний файл vs URL-завантаження -->
+          <div class="src-tabs" role="tablist">
+            <button class="src-tab on" data-src="file" role="tab" type="button">
+              📁 Файл з ПК
+            </button>
+            <button class="src-tab" data-src="url" role="tab" type="button">
+              ⬇ Скачати з URL
+            </button>
+          </div>
+
+          <!-- Mode: локальний файл (drop-zone) -->
           <div class="dz" id="dz" role="button" tabindex="0" aria-label="Зона завантаження відео">
             <svg class="dz-icon" viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 30V14m0 0l-7 7m7-7l7 7"/>
@@ -1256,6 +1343,30 @@ input { user-select: text; }
             <button class="btn-choose" id="btnChoose" type="button">Обрати відео</button>
             <input type="file" id="fileInput" accept="video/*" style="display:none">
             <span class="dz-fmts">MP4 · MOV · AVI · MKV · WEBM</span>
+          </div>
+
+          <!-- Mode: URL-завантаження (прихований за замовчуванням) -->
+          <div class="url-panel" id="urlPanel" hidden>
+            <input class="auth-input url-input" id="urlInput" type="text"
+                   placeholder="Встав посилання — TikTok, Instagram або YouTube"
+                   autocomplete="off">
+            <button class="btn-go" id="btnDownload" type="button" style="margin-top:8px">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="margin-right:6px">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+              </svg>
+              Скачати
+            </button>
+            <div class="url-platforms">
+              <span>🎵 TikTok</span>
+              <span>📷 Instagram</span>
+              <span>▶️ YouTube</span>
+              <span>· найвища якість, без cookies</span>
+            </div>
+            <div class="url-progress" id="urlProgress" hidden>
+              <div class="url-progress-bar"><div class="url-progress-fill" id="urlProgressFill"></div></div>
+              <div class="url-progress-text" id="urlProgressText">Підготовка…</div>
+            </div>
+            <div class="url-error" id="urlError" hidden></div>
           </div>
 
           <div class="finfo off" id="finfo">
@@ -1317,6 +1428,10 @@ input { user-select: text; }
               <div class="opt-row">
                 <span class="opt-label">Показати MD5 до/після</span>
                 <div class="tgl" data-key="showHash" role="switch" aria-checked="false"><div class="tgl-dot"></div></div>
+              </div>
+              <div class="opt-row">
+                <span class="opt-label">Авто-уніфікація після скачки з URL</span>
+                <div class="tgl" data-key="autoUnify" role="switch" aria-checked="false"><div class="tgl-dot"></div></div>
               </div>
               <div class="opt-row output-row">
                 <div class="output-info">
@@ -1696,7 +1811,7 @@ input { user-select: text; }
 const S = {
   file: null, videoInfo: null,
   preset: 'medium',
-  keepAudio: false, noRotation: false, showHash: false,
+  keepAudio: false, noRotation: false, showHash: false, autoUnify: false,
   jobId: null, result: null,
   xhr: null, sse: null,
   adminAuthed: false,
@@ -2141,6 +2256,143 @@ dz.addEventListener('click', e => { if (e.target !== btnChoose) fileInput.click(
 dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); fileInput.click(); }});
 btnChoose.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); fileInput.value=''; });
+
+// ────────────────────────────────────────────────────────────────────────────
+// SOURCE TABS + URL DOWNLOAD (TikTok / Instagram / YouTube via yt-dlp)
+// ────────────────────────────────────────────────────────────────────────────
+const urlPanel = $('urlPanel');
+const urlInput = $('urlInput');
+const btnDownload = $('btnDownload');
+const urlProgress = $('urlProgress');
+const urlProgressFill = $('urlProgressFill');
+const urlProgressText = $('urlProgressText');
+const urlError = $('urlError');
+
+// Перемикач 'Файл з ПК' / 'Скачати з URL'
+document.querySelectorAll('.src-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    const src = t.dataset.src;
+    document.querySelectorAll('.src-tab').forEach(x => x.classList.toggle('on', x === t));
+    if (src === 'url') {
+      dz.hidden = true;
+      urlPanel.hidden = false;
+      setTimeout(() => urlInput.focus(), 50);
+    } else {
+      dz.hidden = false;
+      urlPanel.hidden = true;
+    }
+  });
+});
+
+function showUrlError(msg) {
+  if (!urlError) return;
+  urlError.textContent = msg;
+  urlError.hidden = false;
+}
+function hideUrlError() { if (urlError) urlError.hidden = true; }
+
+async function startUrlDownload() {
+  hideUrlError();
+  const url = (urlInput.value || '').trim();
+  if (!url) { showUrlError('Встав посилання на відео'); return; }
+  if (!/^https?:\/\//i.test(url)) { showUrlError('URL має починатись з http(s)://'); return; }
+
+  btnDownload.disabled = true;
+  btnDownload.textContent = 'Скачую…';
+  urlProgress.hidden = false;
+  urlProgressFill.style.width = '0%';
+  urlProgressText.textContent = 'Підготовка…';
+
+  let jobId;
+  try {
+    const r = await fetch('/api/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      const detail = d.detail || d.error || 'Невідома помилка';
+      showUrlError(detail);
+      btnDownload.disabled = false;
+      btnDownload.textContent = 'Скачати';
+      urlProgress.hidden = true;
+      return;
+    }
+    jobId = d.job_id;
+    urlProgressText.textContent = `Завантаження з ${d.platform || 'URL'}…`;
+  } catch (e) {
+    showUrlError('Сервер недоступний — перезапусти Sleng');
+    btnDownload.disabled = false;
+    btnDownload.textContent = 'Скачати';
+    urlProgress.hidden = true;
+    return;
+  }
+
+  // Polling статусу кожні 600 мс
+  let polling = true;
+  while (polling) {
+    await new Promise(r => setTimeout(r, 600));
+    try {
+      const r = await fetch(`/api/download/status/${jobId}`);
+      const s = await r.json();
+      if (s.status === 'downloading' || s.status === 'merging') {
+        urlProgressFill.style.width = (s.progress || 0) + '%';
+        urlProgressText.textContent = s.status === 'merging'
+          ? 'Склеюю відео+аудіо…'
+          : `Завантаження ${s.progress || 0}%`;
+      } else if (s.status === 'done') {
+        polling = false;
+        urlProgressFill.style.width = '100%';
+        urlProgressText.textContent = `Готово: ${s.title || s.filename || 'video.mp4'}`;
+        await onDownloadComplete(jobId, s.filename || 'video.mp4');
+      } else if (s.status === 'error') {
+        polling = false;
+        showUrlError(s.error || 'Не вдалось завантажити');
+        btnDownload.disabled = false;
+        btnDownload.textContent = 'Скачати';
+        urlProgress.hidden = true;
+      }
+    } catch (e) {
+      polling = false;
+      showUrlError('Втрачено з\'єднання з сервером');
+      btnDownload.disabled = false;
+      btnDownload.textContent = 'Скачати';
+    }
+  }
+}
+
+async function onDownloadComplete(jobId, filename) {
+  // Тягнемо скачаний файл як Blob і робимо з нього File, далі handleFile()
+  // покаже його у dz-row як ніби юзер сам перетягнув.
+  try {
+    const r = await fetch(`/api/download/file/${jobId}`);
+    if (!r.ok) throw new Error('file fetch failed');
+    const blob = await r.blob();
+    const file = new File([blob], filename, { type: blob.type || 'video/mp4' });
+
+    // Переключаємось на file-tab щоб показати завантажений файл у звичайному UI
+    document.querySelectorAll('.src-tab').forEach(x => x.classList.toggle('on', x.dataset.src === 'file'));
+    dz.hidden = false;
+    urlPanel.hidden = true;
+    btnDownload.disabled = false;
+    btnDownload.textContent = 'Скачати';
+
+    await handleFile(file);
+
+    // Якщо ввімкнено 'Авто-уніфікація після скачки' — одразу запускаємо
+    if (S.autoUnify) {
+      setTimeout(() => btnGo?.click(), 200);
+    }
+  } catch (e) {
+    showUrlError('Не вдалось забрати файл з сервера');
+  }
+}
+
+btnDownload?.addEventListener('click', startUrlDownload);
+urlInput?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); startUrlDownload(); }
+});
 
 async function handleFile(file) {
   if (location.protocol === 'file:') return;

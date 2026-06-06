@@ -83,6 +83,10 @@ class Handler(BaseHTTPRequestHandler):
             self._sse_stream(p[8:])
         elif p.startswith('/download/'):
             self._download(p[10:])
+        elif p.startswith('/api/download/status/'):
+            self._download_status(p[len('/api/download/status/'):])
+        elif p.startswith('/api/download/file/'):
+            self._download_file(p[len('/api/download/file/'):])
         else:
             self.send_error(404)
 
@@ -128,6 +132,8 @@ class Handler(BaseHTTPRequestHandler):
             self._auth_activate()
         elif p == '/api/admin/generate-code':
             self._admin_generate_code()
+        elif p == '/api/download':
+            self._start_download()
         elif p.startswith('/cancel/'):
             self._cancel(p[8:])
         else:
@@ -398,6 +404,71 @@ class Handler(BaseHTTPRequestHandler):
 
         threading.Thread(target=_cleanup, args=(job_id, 2), daemon=True).start()
         self._json(200, {'ok': True})
+
+    # ── Download API (TikTok / Instagram / YouTube via yt-dlp) ────────────────
+
+    def _start_download(self):
+        """POST /api/download — приймає {url}, повертає {job_id}."""
+        if not is_activated():
+            self._json(403, {'error': 'not_activated'})
+            return
+        try:
+            ln = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(ln).decode('utf-8') if ln else '{}'
+            data = json.loads(body)
+        except Exception:
+            self._json(400, {'error': 'invalid_json'})
+            return
+
+        url = (data.get('url') or '').strip()
+        if not url or not (url.startswith('http://') or url.startswith('https://')):
+            self._json(400, {'error': 'invalid_url'})
+            return
+
+        from downloader import start_download, detect_platform
+        platform = detect_platform(url)
+        if platform == 'unknown':
+            self._json(400, {'error': 'unsupported_platform',
+                             'detail': 'Підтримуються лише TikTok, Instagram, YouTube'})
+            return
+
+        job_id = start_download(url)
+        self._json(200, {'ok': True, 'job_id': job_id, 'platform': platform})
+
+    def _download_status(self, job_id: str):
+        """GET /api/download/status/<job_id> — повертає прогрес/готовність."""
+        from downloader import get_job
+        job = get_job(job_id)
+        if not job:
+            self._json(404, {'error': 'job_not_found'})
+            return
+        # Не повертаємо повний шлях у відповіді — лише факт готовності,
+        # фронт качає файл через окремий endpoint /api/download/file/<id>
+        resp = {
+            'status':   job.get('status'),
+            'progress': job.get('progress', 0),
+            'error':    job.get('error'),
+            'platform': job.get('platform'),
+            'title':    job.get('title', ''),
+        }
+        if job.get('status') == 'done':
+            resp['ready'] = True
+            resp['filename'] = Path(job.get('file_path', '')).name
+        self._json(200, resp)
+
+    def _download_file(self, job_id: str):
+        """GET /api/download/file/<job_id> — стрімить готовий файл у браузер."""
+        from downloader import get_job
+        job = get_job(job_id)
+        if not job or job.get('status') != 'done':
+            self.send_error(404)
+            return
+        file_path = job.get('file_path')
+        if not file_path or not Path(file_path).exists():
+            self.send_error(404)
+            return
+        # mp4 у 99% випадків (yt-dlp merge_output_format='mp4')
+        self._file(Path(file_path), 'video/mp4')
 
     # ── Утиліти ───────────────────────────────────────────────────────────────
 
