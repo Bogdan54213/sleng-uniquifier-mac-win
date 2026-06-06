@@ -65,6 +65,24 @@ jobs:
             -replace 'id="versionBadge">v[^<]+', "id=`"versionBadge`">v$v" `
             | Set-Content index.html
 
+      # ВАЛІДАЦІЯ — падаємо ОДРАЗУ якщо якийсь критичний secret відсутній.
+      # Раніше при відсутньому HMAC_SECRET CI тихо генерував config.py з порожнім
+      # рядком — Sleng не міг валідувати HMAC коди від бота. Більше так не буде.
+      - name: Validate required secrets
+        shell: pwsh
+        run: |
+          $missing = @()
+          if (-not '${{ secrets.BOT_TOKEN }}')      { $missing += 'BOT_TOKEN' }
+          if (-not '${{ secrets.ADMIN_CHAT_ID }}')  { $missing += 'ADMIN_CHAT_ID' }
+          if (-not '${{ secrets.HMAC_SECRET }}')    { $missing += 'HMAC_SECRET' }
+          if (-not '${{ secrets.ADMIN_PASSWORD }}') { $missing += 'ADMIN_PASSWORD' }
+          if ($missing.Count -gt 0) {
+            Write-Host "::error::Missing required GitHub Secrets: $($missing -join ', ')"
+            Write-Host "Set them at: github.com/Bogdan54213/sleng-uniquifier-mac-win/settings/secrets/actions"
+            exit 1
+          }
+          Write-Host "[validate] all required secrets present"
+
       - name: Create config.py from secrets
         shell: pwsh
         run: |
@@ -215,6 +233,21 @@ jobs:
             const index = fs.readFileSync('index.html', 'utf8').replace(/id=\"versionBadge\">v[^<]+/, 'id=\"versionBadge\">v' + '$V');
             fs.writeFileSync('index.html', index);
           "
+
+      # Та сама валідація що і для Windows — захист від тихої генерації
+      # config.py з порожніми секретами.
+      - name: Validate required secrets
+        run: |
+          missing=""
+          [ -z "${{ secrets.BOT_TOKEN }}" ]      && missing="$missing BOT_TOKEN"
+          [ -z "${{ secrets.ADMIN_CHAT_ID }}" ]  && missing="$missing ADMIN_CHAT_ID"
+          [ -z "${{ secrets.HMAC_SECRET }}" ]    && missing="$missing HMAC_SECRET"
+          [ -z "${{ secrets.ADMIN_PASSWORD }}" ] && missing="$missing ADMIN_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required GitHub Secrets:$missing"
+            exit 1
+          fi
+          echo "[validate] all required secrets present"
 
       - name: Create config.py from secrets
         run: |
