@@ -285,6 +285,18 @@ def validate_and_activate(code: str) -> bool:
     init_db()
     reg = get_registration()
 
+    # ДІАГНОСТИКА — логуємо що Sleng реально обчислює.
+    # Хеш HMAC_SECRET (не plaintext!) видно у server.log щоб порівняти з очікуваним.
+    secret_fp = hashlib.sha256(HMAC_SECRET.encode()).hexdigest()[:12]
+    print(f"[auth] validate_and_activate: input_code='{code}', "
+          f"HMAC_SECRET_fp={secret_fp}, len={len(HMAC_SECRET)}")
+    if reg:
+        expected = generate_activation_code(reg[1])
+        print(f"[auth] machine_id_in_db='{reg[1]}', "
+              f"expected_code='{expected}', input_normalized='{_normalize(code)}'")
+    else:
+        print("[auth] no registration in DB — only master-password works")
+
     # Адмін-пароль як майстер-код (активує на будь-якій машині).
     # Порівнюємо хеш — щоб у .exe не лежав plaintext.
     if _hash_password(code.strip()) == ADMIN_PASSWORD_HASH:

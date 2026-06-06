@@ -1,7 +1,7 @@
 ; Inno Setup — Sleng Uniquifier (Electron)
 
 #define MyAppName      "Sleng Uniquifier"
-#define MyAppVersion   "1.0.36"
+#define MyAppVersion   "1.0.37"
 #define MyAppPublisher "Sleng"
 #define MyAppExeName   "Sleng Uniquifier.exe"
 #define PackedDir      "..\..\dist\electron-packed\Sleng Uniquifier-win32-x64"
