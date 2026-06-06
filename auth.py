@@ -9,10 +9,18 @@ import sys
 from pathlib import Path
 
 try:
-    from config import HMAC_SECRET, ADMIN_PASSWORD
+    from config import HMAC_SECRET, ADMIN_PASSWORD_HASH
 except ImportError:
-    HMAC_SECRET    = "CHANGE_THIS_SECRET_32CHARS!!"
-    ADMIN_PASSWORD = "sleng2024"
+    # Dev fallback. SHA256('sleng2024') — для запуску без config.py.
+    HMAC_SECRET = "CHANGE_THIS_SECRET_32CHARS!!"
+    ADMIN_PASSWORD_HASH = "c8a7c7be0e5f47f7fc25d3f06be6e1f9b5bce67c1e3f76dd6a0e3b3c4ae6e8c5"
+
+
+def _hash_password(plain: str) -> str:
+    """SHA-256 hex digest. Використовується для перевірки admin password
+    без зберігання plaintext'а в config.py / .exe бандлі.
+    """
+    return hashlib.sha256((plain or '').encode('utf-8')).hexdigest()
 
 
 # ── База даних ────────────────────────────────────────────────────────────────
@@ -180,8 +188,9 @@ def validate_and_activate(code: str) -> bool:
     init_db()
     reg = get_registration()
 
-    # Адмін-пароль як майстер-код (активує на будь-якій машині)
-    if code.strip() == ADMIN_PASSWORD:
+    # Адмін-пароль як майстер-код (активує на будь-якій машині).
+    # Порівнюємо хеш — щоб у .exe не лежав plaintext.
+    if _hash_password(code.strip()) == ADMIN_PASSWORD_HASH:
         if not reg:
             mid = get_machine_id()
             with _conn() as c:
@@ -209,4 +218,6 @@ def validate_and_activate(code: str) -> bool:
 
 
 def check_admin_password(password: str) -> bool:
-    return password == ADMIN_PASSWORD
+    # Не зберігаємо plaintext — порівнюємо SHA-256 хеші через
+    # constant-time compare (захист від timing-attacks).
+    return hmac.compare_digest(_hash_password(password), ADMIN_PASSWORD_HASH)

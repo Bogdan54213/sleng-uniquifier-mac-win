@@ -375,11 +375,25 @@ async function createWindow() {
       nodeIntegration:  false,
       contextIsolation: true,
       preload:          path.join(__dirname, 'preload.js'),
-      devTools:         true,    // тримаємо доступним для діагностики через Ctrl+Shift+I
+      // У production .exe DevTools повністю відключений — блокує F12,
+      // Ctrl+Shift+I, mainWindow.webContents.openDevTools() усе разом.
+      // У dev-режимі (npm start) — лишається для діагностики.
+      devTools:         !app.isPackaged,
     },
   });
 
   attachDownloadHandler(mainWindow);
+
+  // Додатковий захист: перехоплюємо Ctrl+Shift+I / F12 у production
+  // і блокуємо їх явно (хоча devTools:false уже мав би це робити).
+  if (app.isPackaged) {
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      const isDevTools =
+        (input.control && input.shift && input.key.toLowerCase() === 'i') ||
+        input.key === 'F12';
+      if (isDevTools) event.preventDefault();
+    });
+  }
 
   // Прибираємо menubar повністю — професійний нативний look без зайвого File/Edit/View
   Menu.setApplicationMenu(null);

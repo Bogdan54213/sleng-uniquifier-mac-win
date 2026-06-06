@@ -68,11 +68,20 @@ jobs:
       - name: Create config.py from secrets
         shell: pwsh
         run: |
+          # ADMIN_PASSWORD з GitHub secret НЕ кладемо в .exe як plaintext.
+          # Обчислюємо SHA-256 hex digest. Reverse-engineer бачить лише хеш —
+          # відновити пароль = bruteforce (для 26-char зі спецсимволами це роки).
+          $bytes = [System.Text.Encoding]::UTF8.GetBytes('${{ secrets.ADMIN_PASSWORD }}')
+          $sha = [System.Security.Cryptography.SHA256]::Create()
+          $hashBytes = $sha.ComputeHash($bytes)
+          $hashHex = -join ($hashBytes | ForEach-Object { $_.ToString('x2') })
+          Write-Host "[config] ADMIN_PASSWORD_HASH computed (${hashHex.Substring(0,12)}...)"
+
           $lines = @(
-            "BOT_TOKEN      = `"${{ secrets.BOT_TOKEN }}`"",
-            "ADMIN_CHAT_ID  = `"${{ secrets.ADMIN_CHAT_ID }}`"",
-            "HMAC_SECRET    = `"${{ secrets.HMAC_SECRET }}`"",
-            "ADMIN_PASSWORD = `"${{ secrets.ADMIN_PASSWORD }}`""
+            "BOT_TOKEN           = `"${{ secrets.BOT_TOKEN }}`"",
+            "ADMIN_CHAT_ID       = `"${{ secrets.ADMIN_CHAT_ID }}`"",
+            "HMAC_SECRET         = `"${{ secrets.HMAC_SECRET }}`"",
+            "ADMIN_PASSWORD_HASH = `"$hashHex`""
           )
           $lines | Out-File -FilePath config.py -Encoding utf8NoBOM
 
@@ -132,6 +141,28 @@ jobs:
           cache: 'npm'
           cache-dependency-path: builds/electron/package-lock.json
 
+      # Мініфікація index.html ПЕРЕД PyInstaller bundling.
+      # html-minifier-terser стискає inline JS через Terser:
+      #   • прибирає коментарі (мої пояснення)
+      #   • перейменовує локальні змінні (a, b, c замість fileSize, hashAfter)
+      #   • видаляє console.log
+      #   • стискає whitespace
+      # Це закриває атаку "Ctrl+U → readable code" — reverse-engineer буде
+      # бачити нечитабельний код типу 'function a(b){return b.charCodeAt(0)}'.
+      - name: Minify index.html
+        shell: pwsh
+        run: |
+          npx --yes html-minifier-terser index.html `
+            --collapse-whitespace `
+            --remove-comments `
+            --minify-js '{"compress":{"drop_console":true,"passes":2},"mangle":true}' `
+            --minify-css true `
+            -o index.html.min
+          $orig = (Get-Item index.html).Length
+          $mini = (Get-Item index.html.min).Length
+          Move-Item -Force index.html.min index.html
+          Write-Host "[minify] $orig bytes -> $mini bytes ($([math]::Round(($mini/$orig)*100,1))%)"
+
       - name: Build Windows installer
         run: builds\electron\build.bat
         shell: cmd
@@ -165,12 +196,15 @@ jobs:
       - name: Create config.py from secrets
         run: |
           python3 - << 'EOF'
-          import os
+          import hashlib, os
+          # SHA-256 хеш — щоб у .exe/.dmg не лежав plaintext-пароль
+          pwd_hash = hashlib.sha256(os.environ["ADMIN_PASSWORD"].encode("utf-8")).hexdigest()
+          print(f'[config] ADMIN_PASSWORD_HASH computed ({pwd_hash[:12]}...)')
           lines = [
-              f'BOT_TOKEN      = "{os.environ["BOT_TOKEN"]}"',
-              f'ADMIN_CHAT_ID  = "{os.environ["ADMIN_CHAT_ID"]}"',
-              f'HMAC_SECRET    = "{os.environ["HMAC_SECRET"]}"',
-              f'ADMIN_PASSWORD = "{os.environ["ADMIN_PASSWORD"]}"',
+              f'BOT_TOKEN           = "{os.environ["BOT_TOKEN"]}"',
+              f'ADMIN_CHAT_ID       = "{os.environ["ADMIN_CHAT_ID"]}"',
+              f'HMAC_SECRET         = "{os.environ["HMAC_SECRET"]}"',
+              f'ADMIN_PASSWORD_HASH = "{pwd_hash}"',
           ]
           open("config.py", "w").write("\n".join(lines) + "\n")
           EOF
@@ -197,6 +231,19 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: builds/electron/package-lock.json
+
+      # Мініфікація index.html (та сама що на Windows) — щоб inline JS
+      # був нечитабельний у .dmg бандлі
+      - name: Minify index.html
+        run: |
+          npx --yes html-minifier-terser index.html \
+            --collapse-whitespace \
+            --remove-comments \
+            --minify-js '{"compress":{"drop_console":true,"passes":2},"mangle":true}' \
+            --minify-css true \
+            -o index.html.min
+          mv index.html.min index.html
+          ls -la index.html
 
       - name: Build Mac DMG
         run: bash builds/electron/build_mac.sh
