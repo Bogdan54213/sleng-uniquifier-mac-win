@@ -95,6 +95,15 @@ jobs:
           $hashHex = -join ($hashBytes | ForEach-Object { $_.ToString('x2') })
           Write-Host "[config] ADMIN_PASSWORD_HASH computed (${hashHex.Substring(0,12)}...)"
 
+          # ДІАГНОСТИКА: HMAC секрет з GitHub в plaintext бачити НЕ можна
+          # (логи Actions публічні), але можемо побачити хеш-fingerprint щоб
+          # співпасти/не співпасти з очікуваним. Якщо HMAC_SECRET = mFjasf...
+          # → SHA256(HMAC_SECRET)[:12] = очікуване значення.
+          $hmacBytes = [System.Text.Encoding]::UTF8.GetBytes('${{ secrets.HMAC_SECRET }}')
+          $hmacHash = $sha.ComputeHash($hmacBytes)
+          $hmacFp = -join ($hmacHash | ForEach-Object { $_.ToString('x2') })
+          Write-Host "[config] HMAC_SECRET length: $('${{ secrets.HMAC_SECRET }}'.Length), fingerprint: $($hmacFp.Substring(0,12))"
+
           # BOT_AUTH_URL — production URL Railway-бота. Sleng client ходить
           # сюди для отримання JWT при активації. Якщо secret не задано —
           # використовується localhost:8080 (dev fallback з auth.py).
