@@ -206,7 +206,9 @@ function startServer() {
       ...process.env,
       SLENG_NO_BROWSER: '1',
       SLENG_SERVER_TOKEN: SERVER_TOKEN,
-      FFMPEG_DIR: resDir,
+      // FFMPEG_DIR тепер вказує на userData/ffmpeg (ensureFfmpeg завантажив сюди).
+      // Раніше було resDir — поруч з server.exe — але це 200MB на кожне auto-update.
+      FFMPEG_DIR: require('./ffmpeg_bootstrap').ffmpegDir(),
     },
   });
 
@@ -485,6 +487,31 @@ app.whenReady().then(async () => {
     }
   } catch (e) {
     console.warn('[main] killZombieOnPort failed (non-fatal):', e.message);
+  }
+
+  // 1.7) Перевіряємо що ffmpeg/ffprobe доступні. При першому запуску їх нема —
+  // тоді качаємо ZIP з BtbN (~80MB, одноразово) і кешуємо в userData/ffmpeg.
+  // Усі наступні апдейти Sleng НЕ перекачують ці 200MB (раніше були у installer).
+  const ffmpegBootstrap = require('./ffmpeg_bootstrap');
+  try {
+    if (!ffmpegBootstrap.isInstalled()) {
+      console.log('[main] ffmpeg not found — downloading on first launch ...');
+      // Можна було б показати progress у splash, але для MVP — просто блок-чекаємо.
+      // Splash і так показує "Завантажую..." дефолтний текст.
+      await ffmpegBootstrap.ensureFfmpeg((p) => {
+        if (p.phase === 'download' && p.pct) {
+          console.log(`[ffmpeg] download ${Math.round(p.pct * 100)}%`);
+        }
+      });
+    }
+  } catch (e) {
+    closeSplash();
+    showDiagnosticDialog(new Error(
+      'Не вдалось завантажити FFmpeg (потрібен для уніфікації відео).\n\n' +
+      'Перевір інтернет-зʼєднання та перезапусти Sleng.\n\nДеталі: ' + e.message
+    ));
+    app.quit();
+    return;
   }
 
   try {
