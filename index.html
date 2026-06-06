@@ -164,6 +164,7 @@ input { user-select: text; }
 .status-dot.err  { background: var(--danger); }
 
 .topbar-actions { display: flex; align-items: center; gap: 4px; -webkit-app-region: no-drag; }
+.icon-btn[hidden] { display: none !important; }
 .icon-btn {
   width: 28px; height: 28px;
   background: transparent;
@@ -1144,7 +1145,9 @@ input { user-select: text; }
           <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
       </button>
-      <button class="icon-btn" id="btnAdminTrigger" title="Admin (Ctrl+Shift+A)" aria-label="Admin">
+      <!-- Admin trigger button прихований для production — тільки Ctrl+Shift+A
+           відкриває панель. Студенти не повинні бачити навіть форму входу. -->
+      <button class="icon-btn" id="btnAdminTrigger" title="Admin" aria-label="Admin" hidden>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
@@ -1153,7 +1156,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.24</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.25</span>
     </div>
   </header>
 
@@ -2039,8 +2042,7 @@ $('btnHelp')?.addEventListener('click', () => {
     </ol>
     <p style="margin-top:12px;color:var(--text-muted);font-size:11.5px">Гарячі клавіші:</p>
     <ul style="list-style:none;padding-left:0">
-      <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd> — Admin-панель</li>
-      <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd> — DevTools</li>
+      <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd> — DevTools (для діагностики)</li>
     </ul>
   `);
 });
