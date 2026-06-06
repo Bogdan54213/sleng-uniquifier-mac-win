@@ -141,27 +141,69 @@ jobs:
           cache: 'npm'
           cache-dependency-path: builds/electron/package-lock.json
 
-      # Мініфікація index.html ПЕРЕД PyInstaller bundling.
-      # html-minifier-terser стискає inline JS через Terser:
-      #   • прибирає коментарі (мої пояснення)
-      #   • перейменовує локальні змінні (a, b, c замість fileSize, hashAfter)
-      #   • видаляє console.log
-      #   • стискає whitespace
-      # Це закриває атаку "Ctrl+U → readable code" — reverse-engineer буде
-      # бачити нечитабельний код типу 'function a(b){return b.charCodeAt(0)}'.
-      - name: Minify index.html
+      # Двоступенева обфускація index.html ПЕРЕД PyInstaller bundling.
+      #
+      # КРОК 1: html-minifier-terser — collapse whitespace, видалення CSS
+      #         коментарів, видалення console.log, basic JS mangling.
+      # КРОК 2: javascript-obfuscator — серйозна обфускація inline JS:
+      #         • String encryption (string-array з base64)
+      #         • Control flow flattening (нелінійні гілки)
+      #         • Dead code injection (фейкові гілки що ніколи не виконуються)
+      #         • Self-defending (захист проти beautify через зміну форматування)
+      #         • Disable console (методи console замінюються на noop)
+      #
+      # Reverse-engineer буде бачити щось типу:
+      #   var _0x4f7a=['\x5a\x47\x6c\x6b','\x3d\x3d','c2xlbmc='];
+      #   (function(_0xb1d2,_0x4f7a){var _0x52d8=function(_0x2c5b){...
+      # Розшифровувати — години роботи з jsbeautify/AST analysis.
+      - name: Obfuscate index.html
         shell: pwsh
         run: |
+          # Витягуємо inline <script>...</script> у окремий файл
+          $html = Get-Content index.html -Raw -Encoding UTF8
+          $rx = [regex]"(?s)<script>\s*(?<body>.+?)</script>"
+          $m = $rx.Match($html)
+          if (-not $m.Success) { throw "No <script> block found in index.html" }
+          $js = $m.Groups['body'].Value
+          Set-Content -Path 'inline.js' -Value $js -Encoding UTF8 -NoNewline
+
+          # Обфускуємо через javascript-obfuscator з агресивними налаштуваннями
+          npx --yes javascript-obfuscator inline.js `
+            --output inline.obf.js `
+            --compact true `
+            --control-flow-flattening true `
+            --control-flow-flattening-threshold 0.75 `
+            --dead-code-injection true `
+            --dead-code-injection-threshold 0.4 `
+            --string-array true `
+            --string-array-encoding base64 `
+            --string-array-threshold 0.75 `
+            --self-defending true `
+            --disable-console-output true `
+            --identifier-names-generator hexadecimal `
+            --rename-globals false `
+            --simplify true `
+            --transform-object-keys false `
+            --unicode-escape-sequence false
+          if (-not (Test-Path inline.obf.js)) { throw "javascript-obfuscator failed" }
+
+          $obf = Get-Content inline.obf.js -Raw -Encoding UTF8
+          # Підставляємо обфускований JS назад у HTML
+          $newHtml = $html.Substring(0, $m.Index) + "<script>" + $obf + "</script>" + $html.Substring($m.Index + $m.Length)
+          Set-Content -Path index.html -Value $newHtml -Encoding UTF8
+
+          # Видаляємо CSS коментарі + collapse whitespace через html-minifier
+          # (без mangle JS — він уже обфускований)
           npx --yes html-minifier-terser index.html `
             --collapse-whitespace `
             --remove-comments `
-            --minify-js '{"compress":{"drop_console":true,"passes":2},"mangle":true}' `
             --minify-css true `
             -o index.html.min
-          $orig = (Get-Item index.html).Length
-          $mini = (Get-Item index.html.min).Length
           Move-Item -Force index.html.min index.html
-          Write-Host "[minify] $orig bytes -> $mini bytes ($([math]::Round(($mini/$orig)*100,1))%)"
+          Remove-Item -Force inline.js, inline.obf.js -ErrorAction SilentlyContinue
+
+          $finalSize = (Get-Item index.html).Length
+          Write-Host "[obfuscate] final index.html size: $finalSize bytes"
 
       - name: Build Windows installer
         run: builds\electron\build.bat
@@ -232,17 +274,53 @@ jobs:
           cache: 'npm'
           cache-dependency-path: builds/electron/package-lock.json
 
-      # Мініфікація index.html (та сама що на Windows) — щоб inline JS
-      # був нечитабельний у .dmg бандлі
-      - name: Minify index.html
+      # Двоступенева обфускація index.html (та сама що на Windows) —
+      # див. коментар у build-windows job
+      - name: Obfuscate index.html
         run: |
+          # Витягуємо inline <script> у окремий файл (sed-based — bash)
+          python3 - << 'PYEOF'
+          import re, pathlib
+          html = pathlib.Path('index.html').read_text(encoding='utf-8')
+          m = re.search(r'(?s)<script>\s*(.+?)</script>', html)
+          if not m: raise SystemExit('No <script> block found')
+          pathlib.Path('inline.js').write_text(m.group(1), encoding='utf-8')
+          pathlib.Path('_html_before.txt').write_text(html[:m.start()] + '\x00MARK\x00' + html[m.end():], encoding='utf-8')
+          PYEOF
+
+          npx --yes javascript-obfuscator inline.js \
+            --output inline.obf.js \
+            --compact true \
+            --control-flow-flattening true \
+            --control-flow-flattening-threshold 0.75 \
+            --dead-code-injection true \
+            --dead-code-injection-threshold 0.4 \
+            --string-array true \
+            --string-array-encoding base64 \
+            --string-array-threshold 0.75 \
+            --self-defending true \
+            --disable-console-output true \
+            --identifier-names-generator hexadecimal \
+            --rename-globals false \
+            --simplify true \
+            --transform-object-keys false \
+            --unicode-escape-sequence false
+
+          python3 - << 'PYEOF'
+          import pathlib
+          tmpl = pathlib.Path('_html_before.txt').read_text(encoding='utf-8')
+          obf  = pathlib.Path('inline.obf.js').read_text(encoding='utf-8')
+          out = tmpl.replace('\x00MARK\x00', '<script>' + obf + '</script>')
+          pathlib.Path('index.html').write_text(out, encoding='utf-8')
+          PYEOF
+
           npx --yes html-minifier-terser index.html \
             --collapse-whitespace \
             --remove-comments \
-            --minify-js '{"compress":{"drop_console":true,"passes":2},"mangle":true}' \
             --minify-css true \
             -o index.html.min
           mv index.html.min index.html
+          rm -f inline.js inline.obf.js _html_before.txt
           ls -la index.html
 
       - name: Build Mac DMG
