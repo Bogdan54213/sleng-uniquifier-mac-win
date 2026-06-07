@@ -437,7 +437,7 @@ class Handler(BaseHTTPRequestHandler):
         # недоступний". Часті причини: yt_dlp не в hiddenimports, або
         # downloader.py не в datas.
         try:
-            from downloader import start_download, detect_platform
+            from downloader import start_download, detect_platform, _user_cookies_file
         except ImportError as e:
             print(f"[ERR] /api/download import failed: {e}")
             self._json(500, {
@@ -452,6 +452,21 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {'error': 'unsupported_platform',
                                  'detail': 'Підтримуються лише TikTok, Instagram, YouTube'})
                 return
+
+            # YouTube та Instagram БЕЗ cookies = гарантована помилка.
+            # Тому навіть не пробуємо качати — одразу повертаємо чітку помилку
+            # з кодом, на який фронт покаже cookies-підказку.
+            if platform in ('youtube', 'instagram') and not _user_cookies_file():
+                name = 'YouTube' if platform == 'youtube' else 'Instagram'
+                self._json(400, {
+                    'error': 'cookies_required',
+                    'platform': platform,
+                    'detail': (f'{name} блокує анонімні запити. '
+                               f'Додай свої cookies — це робиться один раз за 2 хв. '
+                               f'Натисни кнопку «🍪 Налаштувати cookies» нижче.')
+                })
+                return
+
             job_id = start_download(url)
             self._json(200, {'ok': True, 'job_id': job_id, 'platform': platform})
         except Exception as e:

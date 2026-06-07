@@ -1302,7 +1302,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.52</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.53</span>
     </div>
   </header>
 
@@ -2432,11 +2432,24 @@ async function startUrlDownload() {
     let d;
     try { d = await r.json(); } catch { d = null; }
     if (!r.ok || !d || !d.ok) {
-      const detail = (d && (d.detail || d.error)) || `HTTP ${r.status}`;
-      showUrlError('Помилка сервера: ' + detail);
       btnUrlDownload.disabled = false;
       btnUrlDownload.textContent = 'Скачати';
       urlProgress.hidden = true;
+
+      // Cookies НЕ задані для YT/IG — спеціальна обробка
+      if (d && d.error === 'cookies_required') {
+        const name = d.platform === 'youtube' ? 'YouTube' : 'Instagram';
+        showUrlError(`🍪 Для скачки з ${name} потрібно додати свої cookies`);
+        // Одразу відкриваємо великий шильд з інструкцією
+        if (urlErrorHint) {
+          urlErrorHint.hidden = false;
+          urlErrorHint.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        return;
+      }
+
+      const detail = (d && (d.detail || d.error)) || `HTTP ${r.status}`;
+      showUrlError('Помилка: ' + detail);
       return;
     }
     jobId = d.job_id;
