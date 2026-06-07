@@ -514,6 +514,75 @@ input { user-select: text; }
 }
 .url-error[hidden] { display: none; }
 
+/* COOKIES HINTS — постійні підказки */
+.url-hint {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: var(--radius-xs);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-main);
+}
+.url-hint-icon { font-size: 18px; flex-shrink: 0; line-height: 1; }
+.url-hint-body { flex: 1; }
+.url-hint-body b { color: var(--yellow); }
+.url-hint-fix { display: block; margin: 4px 0 6px; color: var(--text-dim); }
+.url-hint-tip {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 10.5px;
+}
+.url-hint-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--yellow);
+  color: #18181b;
+  border: none;
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s;
+  margin-top: 2px;
+}
+.url-hint-btn:hover { filter: brightness(1.1); }
+
+/* Помилка → агресивна підказка */
+.url-error-hint {
+  margin-top: 6px;
+  padding: 12px;
+  background: rgba(245, 158, 11, 0.10);
+  border: 1.5px solid rgba(245, 158, 11, 0.5);
+  border-radius: var(--radius-xs);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-main);
+  animation: pulse-hint 1.5s ease-out;
+}
+.url-error-hint[hidden] { display: none; }
+.url-error-hint-title {
+  font-weight: 700;
+  color: var(--yellow);
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.url-error-hint-steps {
+  margin: 0 0 8px 18px;
+  padding: 0;
+  color: var(--text-dim);
+}
+.url-error-hint-steps li { margin: 2px 0; }
+@keyframes pulse-hint {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); }
+  100% { box-shadow: 0 0 0 16px rgba(245, 158, 11, 0); }
+}
+
 /* DROP ZONE — Linear plain dashed area */
 .dz[hidden] { display: none; }
 .dz {
@@ -1233,7 +1302,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.51</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.52</span>
     </div>
   </header>
 
@@ -1360,13 +1429,40 @@ input { user-select: text; }
               <span>🎵 TikTok</span>
               <span>📷 Instagram</span>
               <span>▶️ YouTube</span>
-              <span>· найвища якість, без cookies</span>
             </div>
+
+            <!-- ПОСТІЙНА ПІДКАЗКА: cookies для YT/IG -->
+            <div class="url-hint" id="urlHint">
+              <div class="url-hint-icon">🍪</div>
+              <div class="url-hint-body">
+                <b>YouTube або Instagram не качає?</b>
+                Це нормально — вони блокують анонімні запити.<br>
+                <span class="url-hint-fix">Налаштуй свої cookies <b>один раз</b> — і все буде скачуватися:</span>
+                <button class="url-hint-btn" id="btnOpenCookies" type="button">
+                  🍪 Налаштувати cookies (2 хв)
+                </button>
+                <span class="url-hint-tip">TikTok працює і без cookies.</span>
+              </div>
+            </div>
+
             <div class="url-progress" id="urlProgress" hidden>
               <div class="url-progress-bar"><div class="url-progress-fill" id="urlProgressFill"></div></div>
               <div class="url-progress-text" id="urlProgressText">Підготовка…</div>
             </div>
             <div class="url-error" id="urlError" hidden></div>
+
+            <!-- ШТУЧНА ПІДКАЗКА після помилки YT/IG -->
+            <div class="url-error-hint" id="urlErrorHint" hidden>
+              <div class="url-error-hint-title">💡 Як виправити за 2 хв</div>
+              <ol class="url-error-hint-steps">
+                <li>Встанови розширення «Get cookies.txt LOCALLY» у браузер</li>
+                <li>Залогінься на YouTube / Instagram</li>
+                <li>Експортуй cookies.txt → завантаж сюди ↓</li>
+              </ol>
+              <button class="url-hint-btn" id="btnOpenCookiesErr" type="button">
+                🍪 Налаштувати cookies зараз
+              </button>
+            </div>
           </div>
 
           <div class="finfo off" id="finfo">
@@ -2291,12 +2387,28 @@ document.querySelectorAll('.src-tab').forEach(t => {
   });
 });
 
+const urlErrorHint = $('urlErrorHint');
+
 function showUrlError(msg) {
   if (!urlError) return;
   urlError.textContent = msg;
   urlError.hidden = false;
+
+  // Якщо помилка стосується YT/IG — НОСОМ ТИЦЯЄМО на cookies-фіксу
+  const url = (urlInput?.value || '').toLowerCase();
+  const lower = (msg || '').toLowerCase();
+  const isYTorIG = /youtube\.com|youtu\.be|instagram\.com/.test(url);
+  const looksLikeAuthBlock = isYTorIG || /sign in|confirm.*bot|login|rate.?limit|private|unavailable|403|429|cookies?/i.test(lower);
+
+  if (urlErrorHint && looksLikeAuthBlock) {
+    urlErrorHint.hidden = false;
+    urlErrorHint.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
-function hideUrlError() { if (urlError) urlError.hidden = true; }
+function hideUrlError() {
+  if (urlError) urlError.hidden = true;
+  if (urlErrorHint) urlErrorHint.hidden = true;
+}
 
 async function startUrlDownload() {
   hideUrlError();
@@ -2356,7 +2468,13 @@ async function startUrlDownload() {
         await onDownloadComplete(jobId, s.filename || 'video.mp4');
       } else if (s.status === 'error') {
         polling = false;
-        showUrlError(s.error || 'Не вдалось завантажити');
+        const errMsg = s.error || 'Не вдалось завантажити';
+        const url = (urlInput?.value || '').toLowerCase();
+        const isYTorIG = /youtube\.com|youtu\.be|instagram\.com/.test(url);
+        // Для YT/IG помилок одразу показуємо великий шильд з cookies-фіксом
+        showUrlError(isYTorIG
+          ? `${errMsg} — потрібні твої cookies (інструкція нижче ↓)`
+          : errMsg);
         btnUrlDownload.disabled = false;
         btnUrlDownload.textContent = 'Скачати';
         urlProgress.hidden = true;
@@ -2425,7 +2543,7 @@ async function refreshCookiesStatus() {
   } catch {}
 }
 
-btnCookiesManage?.addEventListener('click', () => {
+function openCookiesModal() {
   showModal('🍪 Cookies для YouTube / Instagram', `
     <p style="margin:0 0 12px;color:var(--text-main);line-height:1.5;font-size:13px">
       YouTube та Instagram блокують анонімні завантаження. З власними cookies
@@ -2509,10 +2627,25 @@ btnCookiesManage?.addEventListener('click', () => {
       } catch {}
     });
   }, 50);
-});
+}
+
+// Прив'язуємо до всіх трьох точок: технічна опція + постійна підказка + error-підказка
+btnCookiesManage?.addEventListener('click', openCookiesModal);
+$('btnOpenCookies')?.addEventListener('click', openCookiesModal);
+$('btnOpenCookiesErr')?.addEventListener('click', openCookiesModal);
 
 // Підтягуємо статус при старті
 refreshCookiesStatus();
+
+// Якщо cookies вже задані — приховуємо постійну підказку (не сваримо тих хто вже налаштував)
+(async () => {
+  try {
+    const r = await fetch('/api/cookies/status');
+    const d = await r.json();
+    const hint = $('urlHint');
+    if (hint && d.enabled) hint.hidden = true;
+  } catch {}
+})();
 
 async function handleFile(file) {
   if (location.protocol === 'file:') return;
