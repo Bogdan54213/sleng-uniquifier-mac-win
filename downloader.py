@@ -74,8 +74,18 @@ def _yt_dlp_options(out_template: str, on_progress: Callable[[dict], None]) -> d
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
-        # Найвища якість mp4 (відео + аудіо склеєне, до 1080p+).
-        'format': 'bv*+ba/best',
+        # Format selector з fallback chain:
+        #   1) Best mp4 video + best audio (склеїти) — для модерних YT
+        #   2) Best mp4 single file — для android-клієнта YT
+        #   3) Best of anything — останній шанс
+        # Android player YouTube часто не пропонує separate video/audio streams,
+        # тому 'bv*+ba' може повернути 'format not available'. Single-file
+        # 'best[ext=mp4]' — більш сумісний.
+        'format': (
+            'bestvideo[ext=mp4]+bestaudio[ext=m4a]/'
+            'best[ext=mp4]/'
+            'best'
+        ),
         'merge_output_format': 'mp4',
         'progress_hooks': [on_progress],
         'cookiesfrombrowser': None,
