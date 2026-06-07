@@ -63,42 +63,28 @@ def detect_platform(url: str) -> str:
 
 
 def _yt_dlp_options(out_template: str, on_progress: Callable[[dict], None]) -> dict:
-    """Стандартні опції yt-dlp без cookies, у найвищій якості mp4.
+    """Опції yt-dlp без cookies, з максимально доступною якістю.
 
-    Для YouTube використовуємо android/ios player clients замість web —
-    вони не вимагають login/cookies для більшості публічних відео і
-    обходять bot-detection. Це industry-standard трюк для yt-dlp у CI.
+    Спрощений підхід: довіряємо yt-dlp default extractor logic (вона
+    регулярно оновлюється під нові обмеження YouTube). Не намагаємось
+    форсити specific player_client — це може фільтрувати валідні формати.
+
+    format='best' — yt-dlp САМ обере найкраще що зможе отримати.
+    Якщо YouTube блокує без cookies — отримаємо ясну помилку в UI замість
+    кривих trick'ів які перестають працювати через місяць.
     """
     return {
         'outtmpl': out_template,
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
-        # Format selector з fallback chain:
-        #   1) Best mp4 video + best audio (склеїти) — для модерних YT
-        #   2) Best mp4 single file — для android-клієнта YT
-        #   3) Best of anything — останній шанс
-        # Android player YouTube часто не пропонує separate video/audio streams,
-        # тому 'bv*+ba' може повернути 'format not available'. Single-file
-        # 'best[ext=mp4]' — більш сумісний.
-        'format': (
-            'bestvideo[ext=mp4]+bestaudio[ext=m4a]/'
-            'best[ext=mp4]/'
-            'best'
-        ),
+        # Просто 'best' — найвища доступна якість одним файлом. Не вимагаємо
+        # конкретний контейнер (mp4) — деякі formati YT віддає тільки в webm,
+        # потім ми склеїмо до mp4 через merge_output_format.
+        'format': 'best',
         'merge_output_format': 'mp4',
         'progress_hooks': [on_progress],
         'cookiesfrombrowser': None,
-        # ключове для YouTube: android client не вимагає login для public відео
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android', 'ios', 'mweb', 'web'],
-                'player_skip': ['configs'],
-            },
-            'youtubetab': {
-                'skip': ['authcheck'],
-            },
-        },
         'http_headers': {
             'User-Agent': (
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -384,6 +370,16 @@ def _run_download(job_id: str, url: str) -> None:
         err = str(e)
         # Друк типу помилки у server.log для діагностики
         print(f"[download] job={job_id} failed: {type(e).__name__}: {err}")
+        # Юзер-френдлі повідомлення для типових кейсів
+        platform = detect_platform(url)
+        if 'Sign in' in err or 'not a bot' in err or 'cookies' in err.lower():
+            err = (f"YouTube тимчасово блокує анонімне скачування для цього "
+                   f"відео. Спробуй інше посилання або TikTok/Instagram.")
+        elif 'format is not available' in err:
+            err = (f"{platform.title()} не віддає форматів без авторизації. "
+                   f"Спробуй інше відео — деякі публічні працюють.")
+        elif 'Private video' in err or 'unavailable' in err.lower():
+            err = f"Відео приватне або видалене."
         _upd(job_id, status='error', error=err)
 
 
