@@ -62,25 +62,29 @@ def detect_platform(url: str) -> str:
     return 'unknown'
 
 
-def _yt_dlp_options(out_template: str, on_progress: Callable[[dict], None]) -> dict:
-    """Опції yt-dlp без cookies, з максимально доступною якістю.
-
-    Спрощений підхід: довіряємо yt-dlp default extractor logic (вона
-    регулярно оновлюється під нові обмеження YouTube). Не намагаємось
-    форсити specific player_client — це може фільтрувати валідні формати.
-
-    format='best' — yt-dlp САМ обере найкраще що зможе отримати.
-    Якщо YouTube блокує без cookies — отримаємо ясну помилку в UI замість
-    кривих trick'ів які перестають працювати через місяць.
+def _user_cookies_file() -> Optional[Path]:
+    """Шлях до користувацького cookies.txt якщо він є.
+    %LOCALAPPDATA%\\SlengUniquifier\\cookies.txt — куди UI завантажує файл.
     """
-    return {
+    base = os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA') or str(Path.home())
+    p = Path(base) / 'SlengUniquifier' / 'cookies.txt'
+    return p if p.exists() and p.stat().st_size > 0 else None
+
+
+def _yt_dlp_options(out_template: str, on_progress: Callable[[dict], None]) -> dict:
+    """Опції yt-dlp. Якщо юзер залив свої cookies.txt — використовуємо їх.
+
+    Cookies дозволяють YouTube/Instagram обходити anti-bot перевірки.
+    Юзер експортує через browser-extension 'Get cookies.txt LOCALLY' →
+    через UI заливає у Sleng → ми передаємо файл yt-dlp через 'cookiefile'.
+
+    format='best' — найвища доступна якість.
+    """
+    opts = {
         'outtmpl': out_template,
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
-        # Просто 'best' — найвища доступна якість одним файлом. Не вимагаємо
-        # конкретний контейнер (mp4) — деякі formati YT віддає тільки в webm,
-        # потім ми склеїмо до mp4 через merge_output_format.
         'format': 'best',
         'merge_output_format': 'mp4',
         'progress_hooks': [on_progress],
@@ -95,6 +99,12 @@ def _yt_dlp_options(out_template: str, on_progress: Callable[[dict], None]) -> d
         'socket_timeout': 30,
         'retries': 3,
     }
+    # Якщо юзер залив cookies — приєднаємо їх до запиту
+    ck = _user_cookies_file()
+    if ck:
+        opts['cookiefile'] = str(ck)
+        print(f"[download] using user cookies: {ck}")
+    return opts
 
 
 def start_download(url: str) -> str:

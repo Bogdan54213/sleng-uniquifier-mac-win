@@ -1233,7 +1233,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.50</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.51</span>
     </div>
   </header>
 
@@ -1432,6 +1432,13 @@ input { user-select: text; }
               <div class="opt-row">
                 <span class="opt-label">Авто-уніфікація після скачки з URL</span>
                 <div class="tgl" data-key="autoUnify" role="switch" aria-checked="false"><div class="tgl-dot"></div></div>
+              </div>
+              <div class="opt-row output-row">
+                <div class="output-info">
+                  <div class="opt-label">Cookies для YT/Instagram</div>
+                  <div class="output-path" id="cookiesStatus">Не задано</div>
+                </div>
+                <button class="folder-btn" id="btnCookiesManage" type="button">Додати</button>
               </div>
               <div class="opt-row output-row">
                 <div class="output-info">
@@ -2394,6 +2401,118 @@ btnUrlDownload?.addEventListener('click', startUrlDownload);
 urlInput?.addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); startUrlDownload(); }
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// COOKIES MANAGEMENT (для YouTube/Instagram приватного контенту)
+// ────────────────────────────────────────────────────────────────────────────
+const cookiesStatusEl = $('cookiesStatus');
+const btnCookiesManage = $('btnCookiesManage');
+
+async function refreshCookiesStatus() {
+  if (!cookiesStatusEl) return;
+  try {
+    const r = await fetch('/api/cookies/status');
+    const d = await r.json();
+    if (d.enabled) {
+      cookiesStatusEl.textContent = `✓ ${d.count} cookies задано`;
+      cookiesStatusEl.style.color = 'var(--success)';
+      if (btnCookiesManage) btnCookiesManage.textContent = 'Змінити';
+    } else {
+      cookiesStatusEl.textContent = 'Не задано';
+      cookiesStatusEl.style.color = '';
+      if (btnCookiesManage) btnCookiesManage.textContent = 'Додати';
+    }
+  } catch {}
+}
+
+btnCookiesManage?.addEventListener('click', () => {
+  showModal('🍪 Cookies для YouTube / Instagram', `
+    <p style="margin:0 0 12px;color:var(--text-main);line-height:1.5;font-size:13px">
+      YouTube та Instagram блокують анонімні завантаження. З власними cookies
+      Sleng скачає <b>будь-яке</b> відео, яке ти бачиш у браузері.
+    </p>
+    <p style="margin:0 0 8px;color:var(--text-dim);font-size:11.5px;line-height:1.5">
+      <b>Як отримати cookies.txt:</b><br>
+      1. Встанови расширение <b>"Get cookies.txt LOCALLY"</b> у Chrome чи Firefox<br>
+      2. Залогінся на YouTube та Instagram у браузері<br>
+      3. Клікни розширення → "Export As cookies.txt" → збережи файл
+    </p>
+    <p style="margin:8px 0;font-size:11.5px;line-height:1.5">
+      <a href="https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc"
+         target="_blank" style="color:var(--yellow)">Chrome extension →</a><br>
+      <a href="https://addons.mozilla.org/firefox/addon/cookies-txt-one-click/"
+         target="_blank" style="color:var(--yellow)">Firefox extension →</a>
+    </p>
+    <input type="file" id="cookiesFileInput" accept=".txt"
+           style="display:none">
+    <button class="btn-go" id="btnCookiesUpload"
+            style="width:100%;margin-top:12px">
+      📤 Завантажити cookies.txt
+    </button>
+    <button class="btn-go btn-secondary" id="btnCookiesRemove"
+            style="width:100%;margin-top:8px">
+      🗑 Видалити мої cookies
+    </button>
+    <div id="cookiesUploadStatus" style="margin-top:10px;font-size:11.5px;
+         color:var(--text-dim);line-height:1.4"></div>
+  `);
+
+  // Wire дочірні кнопки модала
+  setTimeout(() => {
+    const fileInput = document.getElementById('cookiesFileInput');
+    const uploadBtn = document.getElementById('btnCookiesUpload');
+    const removeBtn = document.getElementById('btnCookiesRemove');
+    const statusEl  = document.getElementById('cookiesUploadStatus');
+
+    uploadBtn?.addEventListener('click', () => fileInput.click());
+    fileInput?.addEventListener('change', async () => {
+      const f = fileInput.files[0];
+      if (!f) return;
+      if (f.size > 5 * 1024 * 1024) {
+        statusEl.textContent = '❌ Файл занадто великий (макс 5 МБ)';
+        statusEl.style.color = 'var(--danger)';
+        return;
+      }
+      statusEl.textContent = 'Завантаження…';
+      try {
+        const text = await f.text();
+        const r = await fetch('/api/cookies/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          body: text,
+        });
+        const d = await r.json();
+        if (d.ok) {
+          statusEl.textContent = `✓ ${d.detail}`;
+          statusEl.style.color = 'var(--success)';
+          refreshCookiesStatus();
+          setTimeout(() => { document.querySelector('.modal-overlay')?.click(); }, 1500);
+        } else {
+          statusEl.textContent = `❌ ${d.detail || d.error}`;
+          statusEl.style.color = 'var(--danger)';
+        }
+      } catch (e) {
+        statusEl.textContent = `❌ ${e.message || e}`;
+        statusEl.style.color = 'var(--danger)';
+      }
+      fileInput.value = '';
+    });
+
+    removeBtn?.addEventListener('click', async () => {
+      if (!confirm('Видалити свої cookies? Скачка приватних відео більше не працюватиме.')) return;
+      try {
+        await fetch('/api/cookies/delete', { method: 'POST' });
+        statusEl.textContent = '✓ Cookies видалено';
+        statusEl.style.color = 'var(--text-muted)';
+        refreshCookiesStatus();
+        setTimeout(() => { document.querySelector('.modal-overlay')?.click(); }, 1000);
+      } catch {}
+    });
+  }, 50);
+});
+
+// Підтягуємо статус при старті
+refreshCookiesStatus();
 
 async function handleFile(file) {
   if (location.protocol === 'file:') return;

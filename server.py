@@ -87,6 +87,8 @@ class Handler(BaseHTTPRequestHandler):
             self._download_status(p[len('/api/download/status/'):])
         elif p.startswith('/api/download/file/'):
             self._download_file(p[len('/api/download/file/'):])
+        elif p == '/api/cookies/status':
+            self._cookies_status()
         else:
             self.send_error(404)
 
@@ -134,6 +136,10 @@ class Handler(BaseHTTPRequestHandler):
             self._admin_generate_code()
         elif p == '/api/download':
             self._start_download()
+        elif p == '/api/cookies/upload':
+            self._cookies_upload()
+        elif p == '/api/cookies/delete':
+            self._cookies_delete()
         elif p.startswith('/cancel/'):
             self._cancel(p[8:])
         else:
@@ -489,6 +495,78 @@ class Handler(BaseHTTPRequestHandler):
             return
         # mp4 у 99% випадків (yt-dlp merge_output_format='mp4')
         self._file(Path(file_path), 'video/mp4')
+
+    # ── Cookies management (для YouTube/Instagram приватного контенту) ────────
+
+    def _cookies_path(self):
+        """Шлях до user cookies.txt."""
+        base = os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA') or str(Path.home())
+        return Path(base) / 'SlengUniquifier' / 'cookies.txt'
+
+    def _cookies_status(self):
+        """GET /api/cookies/status — чи є файл і скільки рядків / коли заливаний."""
+        p = self._cookies_path()
+        if p.exists() and p.stat().st_size > 0:
+            try:
+                # Рахуємо тільки cookie-рядки (не коментарі/пусті)
+                lines = [l for l in p.read_text(encoding='utf-8', errors='ignore').splitlines()
+                         if l and not l.startswith('#')]
+                self._json(200, {
+                    'enabled': True,
+                    'count': len(lines),
+                    'size': p.stat().st_size,
+                })
+                return
+            except Exception:
+                pass
+        self._json(200, {'enabled': False, 'count': 0})
+
+    def _cookies_upload(self):
+        """POST /api/cookies/upload — приймає raw text cookies.txt у body."""
+        try:
+            ln = int(self.headers.get('Content-Length', 0))
+            if ln <= 0 or ln > 5 * 1024 * 1024:  # max 5 MB
+                self._json(400, {'error': 'invalid_size'})
+                return
+            data = self.rfile.read(ln).decode('utf-8', errors='replace')
+        except Exception:
+            self._json(400, {'error': 'read_failed'})
+            return
+
+        # Базова перевірка що це справді cookies.txt формат (Netscape):
+        # перший рядок або '# Netscape HTTP Cookie File' або tab-separated cookie line
+        lines = [l for l in data.splitlines() if l and not l.startswith('#')]
+        if not lines:
+            self._json(400, {'error': 'empty_or_invalid'})
+            return
+        # Більшість cookie-рядків мають tab-separated 7 полів
+        first_line = lines[0].split('\t')
+        if len(first_line) < 6:
+            self._json(400, {
+                'error': 'wrong_format',
+                'detail': 'Файл не схожий на Netscape cookies.txt. '
+                          'Використай browser extension "Get cookies.txt LOCALLY".'
+            })
+            return
+
+        p = self._cookies_path()
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(data, encoding='utf-8')
+        self._json(200, {
+            'ok': True,
+            'count': len(lines),
+            'detail': f'Збережено {len(lines)} cookie-рядків'
+        })
+
+    def _cookies_delete(self):
+        """POST /api/cookies/delete — видаляє cookies.txt."""
+        p = self._cookies_path()
+        if p.exists():
+            try:
+                p.unlink()
+            except Exception:
+                pass
+        self._json(200, {'ok': True})
 
     # ── Утиліти ───────────────────────────────────────────────────────────────
 
