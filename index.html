@@ -514,6 +514,49 @@ input { user-select: text; }
 }
 .url-error[hidden] { display: none; }
 
+/* URL input wrapper з кнопками 'Вставити' / 'Очистити' */
+.url-input-wrap {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.url-input-wrap .url-input {
+  flex: 1;
+  padding-right: 12px;
+}
+.url-input-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 10px;
+  background: var(--bg-control);
+  color: var(--text-dim);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.url-input-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  border-color: var(--yellow);
+}
+.url-input-btn[hidden] { display: none; }
+.url-input-btn-clear {
+  padding: 0 8px;
+  color: var(--text-muted);
+}
+.url-input-btn-clear:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
 /* COOKIES HINTS — постійні підказки */
 .url-hint {
   display: flex;
@@ -1302,7 +1345,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.53</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.54</span>
     </div>
   </header>
 
@@ -1416,9 +1459,24 @@ input { user-select: text; }
 
           <!-- Mode: URL-завантаження (прихований за замовчуванням) -->
           <div class="url-panel" id="urlPanel" hidden>
-            <input class="auth-input url-input" id="urlInput" type="text"
-                   placeholder="Встав посилання — TikTok, Instagram або YouTube"
-                   autocomplete="off">
+            <div class="url-input-wrap">
+              <input class="auth-input url-input" id="urlInput" type="text"
+                     placeholder="Встав посилання — TikTok, Instagram або YouTube"
+                     autocomplete="off">
+              <button class="url-input-btn" id="btnUrlPaste" type="button"
+                      title="Вставити з буфера">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                  <path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V6h10v2z"/>
+                </svg>
+                Вставити
+              </button>
+              <button class="url-input-btn url-input-btn-clear" id="btnUrlClear" type="button"
+                      title="Очистити" hidden>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
             <button class="btn-go" id="btnUrlDownload" type="button" style="margin-top:8px">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="margin-right:6px">
                 <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
@@ -2532,6 +2590,40 @@ btnUrlDownload?.addEventListener('click', startUrlDownload);
 urlInput?.addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); startUrlDownload(); }
 });
+
+// Кнопки 'Вставити' та 'Очистити' для URL-поля
+const btnUrlPaste = $('btnUrlPaste');
+const btnUrlClear = $('btnUrlClear');
+
+function updateUrlButtons() {
+  const hasText = (urlInput?.value || '').trim().length > 0;
+  if (btnUrlClear) btnUrlClear.hidden = !hasText;
+}
+urlInput?.addEventListener('input', updateUrlButtons);
+
+btnUrlPaste?.addEventListener('click', async () => {
+  hideUrlError();
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text) {
+      urlInput.value = text.trim();
+      updateUrlButtons();
+      urlInput.focus();
+    }
+  } catch (e) {
+    // Якщо clipboard API недоступний (рідко в Electron) — підкажемо Ctrl+V
+    showUrlError('Не вдалось прочитати буфер. Натисни поле і Ctrl+V');
+  }
+});
+
+btnUrlClear?.addEventListener('click', () => {
+  urlInput.value = '';
+  hideUrlError();
+  updateUrlButtons();
+  urlInput.focus();
+});
+
+updateUrlButtons();
 
 // ────────────────────────────────────────────────────────────────────────────
 // COOKIES MANAGEMENT (для YouTube/Instagram приватного контенту)

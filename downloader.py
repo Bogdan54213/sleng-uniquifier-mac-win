@@ -85,7 +85,10 @@ def _yt_dlp_options(out_template: str, on_progress: Callable[[dict], None]) -> d
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
-        'format': 'best',
+        # bv*+ba/b: bestvideo+bestaudio (merged) АБО найкращий single-stream.
+        # Це дає реальний original-bitrate замість 'best' (який часто беретав
+        # progressive 720p при доступному 1080p+).
+        'format': 'bv*+ba/b/best',
         'merge_output_format': 'mp4',
         'progress_hooks': [on_progress],
         'cookiesfrombrowser': None,
@@ -309,18 +312,66 @@ def _try_tikwm(url: str, job_id: str) -> Optional[str]:
         return None
 
 
+def _try_yt_dlp(url: str, job_id: str) -> Optional[str]:
+    """yt-dlp у власній функції щоб можна було викликати окремо для TikTok-first.
+
+    Повертає шлях до файлу або None при помилці.
+    """
+    import yt_dlp
+
+    out_dir = _downloads_dir()
+    out_template = str(out_dir / f"{job_id}_%(title).100s.%(ext)s")
+
+    def progress_hook(d):
+        status = d.get('status')
+        if status == 'downloading':
+            total = d.get('total_bytes') or d.get('total_bytes_estimate') or 0
+            downloaded = d.get('downloaded_bytes', 0)
+            pct = int(downloaded * 100 / total) if total else 0
+            _upd(job_id, status='downloading', progress=pct,
+                 downloaded=downloaded, total=total)
+        elif status == 'finished':
+            _upd(job_id, status='merging', progress=95)
+
+    opts = _yt_dlp_options(out_template, progress_hook)
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+        file_path = ydl.prepare_filename(info)
+        if not Path(file_path).exists():
+            mp4_path = re.sub(r'\.[^.]+$', '.mp4', file_path)
+            if Path(mp4_path).exists():
+                file_path = mp4_path
+    return file_path if Path(file_path).exists() else None
+
+
 def _run_download(job_id: str, url: str) -> None:
     try:
         platform = detect_platform(url)
         _upd(job_id, status='downloading', progress=5)
 
-        # Платформи без cookies-блокування → специфічні API спочатку.
-        # 1) TikTok: tikwm (HD, без watermark)
-        # 2) YouTube / Instagram: cobalt.tools (universal API)
-        # 3) Якщо все впало — yt-dlp як останній шанс
+        # СТРАТЕГІЯ ЯКОСТІ:
+        #   TikTok: yt-dlp ПЕРШИЙ (тягне оригінальний 1080p H.264) →
+        #           якщо TikTok заблокував → tikwm (часто 720p) →
+        #           cobalt як останній шанс.
+        #   YouTube / Instagram: cobalt спочатку (yt-dlp ці платформи
+        #           блокують без cookies), yt-dlp лише з cookies.
         if platform == 'tiktok':
+            # yt-dlp first — найвища якість через TikTok's own player API
+            try:
+                res = _try_yt_dlp(url, job_id)
+                if res and Path(res).exists():
+                    sz = Path(res).stat().st_size
+                    print(f"[download] yt-dlp TikTok success: {sz} bytes")
+                    _upd(job_id, status='done', progress=100, file_path=res)
+                    return
+            except Exception as e:
+                print(f"[download] yt-dlp TikTok failed: {type(e).__name__}: {e}")
+
+            print("[download] yt-dlp failed for TikTok, falling back to tikwm")
             res = _try_tikwm(url, job_id)
             if res and Path(res).exists():
+                sz = Path(res).stat().st_size
+                print(f"[download] tikwm TikTok success: {sz} bytes")
                 _upd(job_id, status='done', progress=100, file_path=res)
                 return
             print("[download] tikwm failed, trying cobalt")
@@ -328,7 +379,7 @@ def _run_download(job_id: str, url: str) -> None:
             if res and Path(res).exists():
                 _upd(job_id, status='done', progress=100, file_path=res)
                 return
-            print("[download] cobalt failed, falling back to yt-dlp")
+            print("[download] cobalt failed, falling back to yt-dlp generic")
 
         elif platform in ('youtube', 'instagram'):
             # YouTube / IG агресивно блокують yt-dlp як бота.
@@ -339,42 +390,12 @@ def _run_download(job_id: str, url: str) -> None:
                 return
             print(f"[download] cobalt failed for {platform}, falling back to yt-dlp")
 
-        # Імпорт yt_dlp всередині треда — щоб startup server.exe не блокувався
-        # на ~500ms ініціалізації yt-dlp коли download не потрібен.
-        import yt_dlp
-
-        out_dir = _downloads_dir()
-        # Унікальний префікс на job_id щоб паралельні job'и не конфліктували
-        out_template = str(out_dir / f"{job_id}_%(title).100s.%(ext)s")
-
-        def progress_hook(d):
-            status = d.get('status')
-            if status == 'downloading':
-                total = d.get('total_bytes') or d.get('total_bytes_estimate') or 0
-                downloaded = d.get('downloaded_bytes', 0)
-                pct = int(downloaded * 100 / total) if total else 0
-                _upd(job_id, status='downloading', progress=pct,
-                     downloaded=downloaded, total=total)
-            elif status == 'finished':
-                # Файл скачаний, ще може йти merge (склейка audio+video)
-                _upd(job_id, status='merging', progress=95)
-
+        # Fallback: yt-dlp (для YT/IG потребує cookies; для TikTok вже намагались)
         _upd(job_id, status='downloading', progress=1)
-
-        opts = _yt_dlp_options(out_template, progress_hook)
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            # Реальний шлях до файлу (після merge може мати інший суфікс)
-            file_path = ydl.prepare_filename(info)
-            # Після merge_output_format=mp4 файл може мати .mp4 розширення
-            # навіть якщо prepare_filename повертає інше — перевіримо.
-            if not Path(file_path).exists():
-                mp4_path = re.sub(r'\.[^.]+$', '.mp4', file_path)
-                if Path(mp4_path).exists():
-                    file_path = mp4_path
-
-        _upd(job_id, status='done', progress=100, file_path=file_path,
-             title=info.get('title', ''))
+        file_path = _try_yt_dlp(url, job_id)
+        if not file_path:
+            raise RuntimeError("yt-dlp не зміг завантажити відео")
+        _upd(job_id, status='done', progress=100, file_path=file_path)
 
     except Exception as e:
         err = str(e)
