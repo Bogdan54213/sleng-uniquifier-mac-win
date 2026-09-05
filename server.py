@@ -512,7 +512,8 @@ class Handler(BaseHTTPRequestHandler):
             self._json(404, {'error': 'file_missing', 'detail': str(file_path)})
             return
         # mp4 у 99% випадків (yt-dlp merge_output_format='mp4')
-        self._file(Path(file_path), 'video/mp4')
+        print(f'[file] запит {job_id} -> {Path(file_path).name}', flush=True)
+        self._file(Path(file_path), 'video/mp4', verbose=True)
 
     # ── Cookies management (для YouTube/Instagram приватного контенту) ────────
 
@@ -588,7 +589,7 @@ class Handler(BaseHTTPRequestHandler):
 
     # ── Утиліти ───────────────────────────────────────────────────────────────
 
-    def _file(self, path, ct):
+    def _file(self, path, ct, verbose=False):
         # Щойно скачане відео на Windows буває тимчасово залочене (ffmpeg ще
         # тримає хендл, антивірус сканує новий .mp4) — open() падає з
         # PermissionError. Ретраїмо ~3 с перед тим як віддати помилку.
@@ -610,6 +611,9 @@ class Handler(BaseHTTPRequestHandler):
                 'detail': f'{type(last_err).__name__}: {last_err}',
             })
             return
+        sent = 0
+        size = -1
+        t0 = time.time()
         try:
             size = os.fstat(fh.fileno()).st_size
             self.send_response(200)
@@ -617,10 +621,21 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Length', str(size))
             self.end_headers()
             # Стрімимо шматками — 30-мегабайтне відео не тримаємо в RAM цілком
-            shutil.copyfileobj(fh, self.wfile, 256 * 1024)
+            while True:
+                chunk = fh.read(256 * 1024)
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                sent += len(chunk)
         except Exception as e:
-            # Заголовки вже пішли — лишається тільки лог і обрив з'єднання
-            print(f'[ERR] _file {path}: {type(e).__name__}: {e}')
+            # Заголовки вже пішли — лишається тільки лог і обрив з'єднання.
+            # log_message() тут вимкнено, тому пишемо явно: без цього рядка
+            # обрив тіла на півдорозі не лишає ЖОДНОГО сліду в лозі.
+            print(f'[ERR] _file {path.name}: {type(e).__name__}: {e} '
+                  f'(віддано {sent} з {size} байт за {time.time() - t0:.1f}с)', flush=True)
+        else:
+            if verbose:
+                print(f'[file] {path.name}: {sent} байт за {time.time() - t0:.2f}с', flush=True)
         finally:
             fh.close()
 
