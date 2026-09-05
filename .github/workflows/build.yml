@@ -62,7 +62,7 @@ jobs:
             | Set-Content builds\electron\setup_electron.iss
           # UI badge
           (Get-Content index.html) `
-            -replace 'id="versionBadge">v[^<]+', "id=`"versionBadge`">v$v" `
+            -replace '(id="versionBadge"[^>]*>)v[^<]+', "`${1}v$v" `
             | Set-Content index.html
 
       # ВАЛІДАЦІЯ — падаємо ОДРАЗУ якщо якийсь критичний secret відсутній.
@@ -239,7 +239,7 @@ jobs:
             const p = JSON.parse(fs.readFileSync('builds/electron/package.json'));
             p.version = '$V';
             fs.writeFileSync('builds/electron/package.json', JSON.stringify(p, null, 2));
-            const index = fs.readFileSync('index.html', 'utf8').replace(/id=\"versionBadge\">v[^<]+/, 'id=\"versionBadge\">v' + '$V');
+            const index = fs.readFileSync('index.html', 'utf8').replace(/(id=\"versionBadge\"[^>]*>)v[^<]+/, '$1v' + '$V');
             fs.writeFileSync('index.html', index);
           "
 
