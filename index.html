@@ -2559,14 +2559,38 @@ async function startUrlDownload() {
   }
 }
 
+// Тягне готовий файл з сервера. Одразу після merge файл на Windows буває
+// тимчасово залочений (ffmpeg / антивірус) і сервер віддає 500 — тому
+// ретраїмо кілька разів з наростаючою паузою замість того щоб здатись.
+async function fetchDownloadedFile(jobId, filename) {
+  let lastErr = '';
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if (attempt) await new Promise(r => setTimeout(r, 400 * attempt));
+    let r;
+    try {
+      r = await fetch(`/api/download/file/${jobId}`);
+    } catch (e) {
+      lastErr = e.message || String(e);
+      continue;
+    }
+    if (r.ok) {
+      const blob = await r.blob();
+      return new File([blob], filename, { type: blob.type || 'video/mp4' });
+    }
+    let d = null;
+    try { d = await r.json(); } catch {}
+    lastErr = d ? [d.error, d.detail].filter(Boolean).join(': ') : `HTTP ${r.status}`;
+    // Джоба зникла або файл видалено — ретраї не допоможуть
+    if (d && (d.error === 'job_not_found' || d.error === 'file_missing')) break;
+  }
+  throw new Error(lastErr || 'невідома помилка');
+}
+
 async function onDownloadComplete(jobId, filename) {
   // Тягнемо скачаний файл як Blob і робимо з нього File, далі handleFile()
   // покаже його у dz-row як ніби юзер сам перетягнув.
   try {
-    const r = await fetch(`/api/download/file/${jobId}`);
-    if (!r.ok) throw new Error('file fetch failed');
-    const blob = await r.blob();
-    const file = new File([blob], filename, { type: blob.type || 'video/mp4' });
+    const file = await fetchDownloadedFile(jobId, filename);
 
     // Переключаємось на file-tab щоб показати завантажений файл у звичайному UI
     document.querySelectorAll('.src-tab').forEach(x => x.classList.toggle('on', x.dataset.src === 'file'));
@@ -2582,7 +2606,10 @@ async function onDownloadComplete(jobId, filename) {
       setTimeout(() => btnGo?.click(), 200);
     }
   } catch (e) {
-    showUrlError('Не вдалось забрати файл з сервера');
+    btnUrlDownload.disabled = false;
+    btnUrlDownload.textContent = 'Скачати';
+    urlProgress.hidden = true;
+    showUrlError('Не вдалось забрати файл з сервера: ' + (e.message || e));
   }
 }
 

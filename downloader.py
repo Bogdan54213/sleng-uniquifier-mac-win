@@ -344,6 +344,41 @@ def _try_yt_dlp(url: str, job_id: str) -> Optional[str]:
     return file_path if Path(file_path).exists() else None
 
 
+def _wait_file_ready(path: Path, timeout: float = 25.0) -> bool:
+    """Чекає поки щойно створений файл справді можна прочитати.
+
+    На Windows одразу після merge файл ще буває залочений: ffmpeg міг не
+    встигнути віддати хендл, а Defender сканує кожен новий .mp4. Спроба
+    відкрити такий файл падає з PermissionError / WinError 32, і сервер
+    віддає фронту 500 замість відео.
+
+    Вважаємо файл готовим, коли розмір перестав рости і він відкривається
+    на читання.
+    """
+    deadline = time.time() + timeout
+    last_size = -1
+    while time.time() < deadline:
+        try:
+            size = path.stat().st_size
+            if size > 0 and size == last_size:
+                with open(path, 'rb') as fh:
+                    fh.read(1)
+                return True
+            last_size = size
+        except OSError:
+            last_size = -1
+        time.sleep(0.3)
+    return False
+
+
+def _mark_done(job_id: str, file_path: str) -> None:
+    """Позначає джобу готовою — але лише коли файл реально читається."""
+    _upd(job_id, status='merging', progress=98)
+    if not _wait_file_ready(Path(file_path)):
+        print(f"[download] job={job_id} file not readable in time: {file_path}")
+    _upd(job_id, status='done', progress=100, file_path=file_path)
+
+
 def _run_download(job_id: str, url: str) -> None:
     try:
         platform = detect_platform(url)
@@ -362,7 +397,7 @@ def _run_download(job_id: str, url: str) -> None:
                 if res and Path(res).exists():
                     sz = Path(res).stat().st_size
                     print(f"[download] yt-dlp TikTok success: {sz} bytes")
-                    _upd(job_id, status='done', progress=100, file_path=res)
+                    _mark_done(job_id, res)
                     return
             except Exception as e:
                 print(f"[download] yt-dlp TikTok failed: {type(e).__name__}: {e}")
@@ -372,12 +407,12 @@ def _run_download(job_id: str, url: str) -> None:
             if res and Path(res).exists():
                 sz = Path(res).stat().st_size
                 print(f"[download] tikwm TikTok success: {sz} bytes")
-                _upd(job_id, status='done', progress=100, file_path=res)
+                _mark_done(job_id, res)
                 return
             print("[download] tikwm failed, trying cobalt")
             res = _try_cobalt(url, job_id, platform)
             if res and Path(res).exists():
-                _upd(job_id, status='done', progress=100, file_path=res)
+                _mark_done(job_id, res)
                 return
             print("[download] cobalt failed, falling back to yt-dlp generic")
 
@@ -386,7 +421,7 @@ def _run_download(job_id: str, url: str) -> None:
             # cobalt не має цих проблем (працює через серверну реалізацію).
             res = _try_cobalt(url, job_id, platform)
             if res and Path(res).exists():
-                _upd(job_id, status='done', progress=100, file_path=res)
+                _mark_done(job_id, res)
                 return
             print(f"[download] cobalt failed for {platform}, falling back to yt-dlp")
 
@@ -395,7 +430,7 @@ def _run_download(job_id: str, url: str) -> None:
         file_path = _try_yt_dlp(url, job_id)
         if not file_path:
             raise RuntimeError("yt-dlp не зміг завантажити відео")
-        _upd(job_id, status='done', progress=100, file_path=file_path)
+        _mark_done(job_id, file_path)
 
     except Exception as e:
         err = str(e)

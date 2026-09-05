@@ -501,12 +501,15 @@ class Handler(BaseHTTPRequestHandler):
         """GET /api/download/file/<job_id> — стрімить готовий файл у браузер."""
         from downloader import get_job
         job = get_job(job_id)
-        if not job or job.get('status') != 'done':
-            self.send_error(404)
+        if not job:
+            self._json(404, {'error': 'job_not_found'})
+            return
+        if job.get('status') != 'done':
+            self._json(409, {'error': 'not_ready', 'status': job.get('status')})
             return
         file_path = job.get('file_path')
         if not file_path or not Path(file_path).exists():
-            self.send_error(404)
+            self._json(404, {'error': 'file_missing', 'detail': str(file_path)})
             return
         # mp4 у 99% випадків (yt-dlp merge_output_format='mp4')
         self._file(Path(file_path), 'video/mp4')
@@ -586,15 +589,40 @@ class Handler(BaseHTTPRequestHandler):
     # ── Утиліти ───────────────────────────────────────────────────────────────
 
     def _file(self, path, ct):
+        # Щойно скачане відео на Windows буває тимчасово залочене (ffmpeg ще
+        # тримає хендл, антивірус сканує новий .mp4) — open() падає з
+        # PermissionError. Ретраїмо ~3 с перед тим як віддати помилку.
+        fh = None
+        last_err = None
+        for _ in range(12):
+            try:
+                fh = open(path, 'rb')
+                break
+            except FileNotFoundError as e:
+                last_err = e
+                break  # файла просто нема — ретраї не допоможуть
+            except OSError as e:
+                last_err = e
+                time.sleep(0.25)
+        if fh is None:
+            self._json(500, {
+                'error':  'file_locked',
+                'detail': f'{type(last_err).__name__}: {last_err}',
+            })
+            return
         try:
-            data = path.read_bytes()
+            size = os.fstat(fh.fileno()).st_size
             self.send_response(200)
             self.send_header('Content-Type',   ct)
-            self.send_header('Content-Length', str(len(data)))
+            self.send_header('Content-Length', str(size))
             self.end_headers()
-            self.wfile.write(data)
+            # Стрімимо шматками — 30-мегабайтне відео не тримаємо в RAM цілком
+            shutil.copyfileobj(fh, self.wfile, 256 * 1024)
         except Exception as e:
-            self.send_error(500, str(e))
+            # Заголовки вже пішли — лишається тільки лог і обрив з'єднання
+            print(f'[ERR] _file {path}: {type(e).__name__}: {e}')
+        finally:
+            fh.close()
 
     def _json(self, code, data):
         body = json.dumps(data, ensure_ascii=False).encode('utf-8')
