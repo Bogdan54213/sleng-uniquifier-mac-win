@@ -64,6 +64,12 @@ jobs:
           (Get-Content index.html) `
             -replace '(id="versionBadge"[^>]*>)v[^<]+', "`${1}v$v" `
             | Set-Content index.html
+          # Guard: -replace при незбігу мовчить. Падаємо голосно.
+          if ((Get-Content index.html -Raw) -notmatch "id=`"versionBadge`"[^>]*>v$([regex]::Escape($v))<") {
+            Write-Host "::error::version badge substitution failed (expected v$v)"
+            exit 1
+          }
+          Write-Host "[verify] badge = v$v"
 
       # ВАЛІДАЦІЯ — падаємо ОДРАЗУ якщо якийсь критичний secret відсутній.
       # Раніше при відсутньому HMAC_SECRET CI тихо генерував config.py з порожнім
@@ -239,9 +245,13 @@ jobs:
             const p = JSON.parse(fs.readFileSync('builds/electron/package.json'));
             p.version = '$V';
             fs.writeFileSync('builds/electron/package.json', JSON.stringify(p, null, 2));
-            const index = fs.readFileSync('index.html', 'utf8').replace(/(id=\"versionBadge\"[^>]*>)v[^<]+/, '$1v' + '$V');
+            const index = fs.readFileSync('index.html', 'utf8').replace(/(id=\"versionBadge\"[^>]*>)v[^<]+/, (m, p1) => p1 + 'v' + '$V');
             fs.writeFileSync('index.html', index);
           "
+          # Guard: .replace при незбігу теж мовчить. Падаємо голосно.
+          grep -q "id=\"versionBadge\"[^>]*>v${V}<" index.html || {
+            echo "::error::version badge substitution failed (expected v${V})"; exit 1; }
+          echo "[verify] badge = v${V}"
 
       # Та сама валідація що і для Windows — захист від тихої генерації
       # config.py з порожніми секретами.
