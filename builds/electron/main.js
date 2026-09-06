@@ -43,6 +43,25 @@ function setOutputDir(dir) {
   writeSettings(settings);
 }
 
+// Розмір вікна памʼятаємо між запусками — там же де outputDir.
+function getWindowBounds() {
+  const b = readSettings().windowBounds;
+  if (!b || typeof b.width !== 'number' || typeof b.height !== 'number') return null;
+  // Захист від збереженого сміття / зниклого монітора
+  if (b.width < 700 || b.height < 520 || b.width > 10000 || b.height > 10000) return null;
+  return b;
+}
+
+function saveWindowBounds(win) {
+  try {
+    if (!win || win.isDestroyed() || win.isMinimized()) return;
+    const [width, height] = win.getSize();
+    const settings = readSettings();
+    settings.windowBounds = { width, height };
+    writeSettings(settings);
+  } catch { /* не критично — просто не запамʼятаємо розмір */ }
+}
+
 function uniqueOutputPath(dir, filename) {
   const parsed = path.parse(filename || 'video_unique.mp4');
   let candidate = path.join(dir, parsed.base);
@@ -346,18 +365,18 @@ async function createWindow() {
     ? path.join(process.resourcesPath, iconFile)
     : path.join(__dirname, iconFile);
 
-  // Compact desktop tool — фіксоване вікно, не resizable.
-  // Це native Windows app, не браузер: нема адресного рядка, нема вкладок.
+  // Вікно змінюване. Верстка fluid (grid з fr-колонками) — перевірено від
+  // 640x560 до 1920x1080 без горизонтального переповнення, тож обмежувати
+  // жорстко немає причин. Мінімум лишаємо з запасом до перевіреної межі.
+  const saved = getWindowBounds();
   mainWindow = new BrowserWindow({
-    width:           980,
-    height:          680,
-    minWidth:        980,
-    minHeight:       680,
-    maxWidth:        980,
-    maxHeight:       680,
-    resizable:       false,
-    maximizable:     false,
-    fullscreenable:  false,
+    width:           saved ? saved.width  : 980,
+    height:          saved ? saved.height : 680,
+    minWidth:        820,
+    minHeight:       600,
+    resizable:       true,
+    maximizable:     true,
+    fullscreenable:  true,
     title:           '',
     icon:            iconPath,
     backgroundColor: '#050505',
@@ -432,6 +451,14 @@ async function createWindow() {
 
   // Коли main готова — спершу закриваємо splash, потім показуємо main.
   // Таким чином немає миті коли видно обидва вікна (або жодного).
+  // Зберігаємо розмір з дебаунсом — resize сипле десятками подій за секунду
+  let boundsTimer = null;
+  mainWindow.on('resize', () => {
+    clearTimeout(boundsTimer);
+    boundsTimer = setTimeout(() => saveWindowBounds(mainWindow), 400);
+  });
+  mainWindow.on('close', () => saveWindowBounds(mainWindow));
+
   mainWindow.once('ready-to-show', () => {
     if (splashWindow && !splashWindow.isDestroyed()) {
       try { splashWindow.close(); } catch {}

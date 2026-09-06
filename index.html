@@ -1345,7 +1345,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.59</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.60</span>
     </div>
   </header>
 
@@ -2506,6 +2506,12 @@ async function startUrlDownload() {
         return;
       }
 
+      // Сервер відмовив ще до скачування — місця на диску немає
+      if (d && d.error === 'low_disk') {
+        showUrlError('💾 ' + (d.detail || 'Замало місця на диску'));
+        return;
+      }
+
       const detail = (d && (d.detail || d.error)) || `HTTP ${r.status}`;
       showUrlError('Помилка: ' + detail);
       return;
@@ -2628,6 +2634,21 @@ window.addEventListener('unhandledrejection', e => clog('unhandled.rejection', {
 // ВАЖЛИВО: blob() теж усередині try. Якщо тіло відповіді обірветься на
 // півдорозі, Chromium кидає таке саме 'Failed to fetch' як і при відмові
 // з'єднання — раніше воно вилітало повз ретраї з першої ж спроби.
+// Коли отримання файлу впало — перевіряємо диск ПЕРЕД тим як звинувачувати
+// мережу. Chromium тримає blob-сховище на системному диску: при повному диску
+// response.blob() падає з TypeError 'Failed to fetch' навіть коли тіло прийшло
+// цілим. Ззовні не відрізнити від обриву звʼязку, тому питаємо сервер прямо.
+async function diskDiagnosis() {
+  try {
+    const r = await fetch('/api/diskinfo');
+    if (!r.ok) return null;
+    const d = await r.json();
+    if (!d.low) return null;
+    return `замало місця на диску ${d.drive} — вільно ${d.free_gb} ГБ. `
+         + `Звільни місце і спробуй ще раз.`;
+  } catch (e) { return null; }
+}
+
 async function fetchDownloadedFile(jobId, filename) {
   const url = `/api/download/file/${jobId}`;
   let lastErr = '';
@@ -2687,7 +2708,13 @@ async function onDownloadComplete(jobId, filename) {
     file = await fetchDownloadedFile(jobId, filename);
   } catch (e) {
     resetUrlUi();
-    showUrlError('Не вдалось забрати файл з сервера: ' + (e.message || e));
+    const disk = await diskDiagnosis();
+    if (disk) {
+      clog('complete.lowdisk', { err: `${e.message || e}`, disk });
+      showUrlError('💾 Не вдалось зберегти відео: ' + disk);
+    } else {
+      showUrlError('Не вдалось забрати файл з сервера: ' + (e.message || e));
+    }
     return;
   }
 

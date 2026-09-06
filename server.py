@@ -87,6 +87,8 @@ class Handler(BaseHTTPRequestHandler):
             self._download_status(p[len('/api/download/status/'):])
         elif p.startswith('/api/download/file/'):
             self._download_file(p[len('/api/download/file/'):])
+        elif p == '/api/diskinfo':
+            self._disk_info()
         elif p == '/api/cookies/status':
             self._cookies_status()
         else:
@@ -413,6 +415,38 @@ class Handler(BaseHTTPRequestHandler):
         threading.Thread(target=_cleanup, args=(job_id, 2), daemon=True).start()
         self._json(200, {'ok': True})
 
+    # ── Місце на диску ───────────────────────────────────────────────────────
+
+    # Нижче цієї межі скачувати немає сенсу: браузерне blob-сховище Chromium
+    # лежить на тому ж диску, і навіть при повністю отриманому тілі
+    # response.blob() падає з TypeError 'Failed to fetch'. Ззовні це виглядає
+    # як мережева помилка, хоча мережа ні до чого.
+    MIN_FREE_BYTES = 500 * 1024 * 1024      # жорстка відмова
+    LOW_FREE_BYTES = 2 * 1024 * 1024 * 1024  # попередження
+
+    @staticmethod
+    def _free_space():
+        """(free, total, drive) для диска, де лежать завантаження."""
+        from downloader import _downloads_dir
+        d = _downloads_dir()
+        usage = shutil.disk_usage(str(d))
+        return usage.free, usage.total, str(d.drive or d.anchor)
+
+    def _disk_info(self):
+        try:
+            free, total, drive = self._free_space()
+        except Exception as e:
+            self._json(500, {'error': 'disk_check_failed', 'detail': str(e)})
+            return
+        self._json(200, {
+            'free': free,
+            'total': total,
+            'drive': drive,
+            'free_gb': round(free / 1024 ** 3, 2),
+            'low': free < self.LOW_FREE_BYTES,
+            'critical': free < self.MIN_FREE_BYTES,
+        })
+
     # ── Діагностика з фронтенду ──────────────────────────────────────────────
 
     def _client_log(self):
@@ -469,6 +503,23 @@ class Handler(BaseHTTPRequestHandler):
         if not url or not (url.startswith('http://') or url.startswith('https://')):
             self._json(400, {'error': 'invalid_url'})
             return
+
+        # Перевіряємо місце ДО скачування — інакше відео завантажиться, а
+        # потім упаде на етапі передачі у браузер з незрозумілою помилкою.
+        try:
+            free, _total, drive = self._free_space()
+            if free < self.MIN_FREE_BYTES:
+                self._json(507, {
+                    'error': 'low_disk',
+                    'free': free,
+                    'drive': drive,
+                    'detail': (f'На диску {drive} лишилось '
+                               f'{free / 1024 ** 3:.2f} ГБ. Потрібно щонайменше '
+                               f'0.5 ГБ — звільни місце і спробуй ще раз.'),
+                })
+                return
+        except Exception as e:
+            print(f'[disk] перевірка місця не вдалась: {e}', flush=True)
 
         # Імпорт обгорнутий у try — щоб якщо downloader.py / yt-dlp не зібрався
         # PyInstaller'ом коректно, юзер бачив осмислену помилку, а не "Сервер
@@ -812,6 +863,24 @@ def _cleanup(job_id: str, delay: int = 0):
 
 # ── Запуск ────────────────────────────────────────────────────────────────────
 
+def _downloads_janitor():
+    """Прибирає старі завантаження — при старті і далі раз на годину.
+
+    Раніше cleanup_old_downloads() існувала, але НЕ викликалась ніде (докстрінг
+    обіцяв cron, якого не було). За три місяці папка набирала 1.4 ГБ і забивала
+    системний диск, а повний диск ламав передачу відео в браузер.
+    """
+    while True:
+        try:
+            from downloader import cleanup_old_downloads
+            n = cleanup_old_downloads(max_age_hours=24)
+            if n:
+                print(f'[janitor] видалено старих завантажень: {n}', flush=True)
+        except Exception as e:
+            print(f'[janitor] помилка прибирання: {type(e).__name__}: {e}', flush=True)
+        time.sleep(3600)
+
+
 def main():
     if not check_ffmpeg():
         raise RuntimeError(
@@ -836,6 +905,9 @@ def main():
     # відкриває локальну адресу всередині свого BrowserWindow.
     if os.environ.get('SLENG_NO_BROWSER') != '1':
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+
+    # Прибиральник старих завантажень (див. _downloads_janitor)
+    threading.Thread(target=_downloads_janitor, daemon=True).start()
 
     try:
         srv.serve_forever()
