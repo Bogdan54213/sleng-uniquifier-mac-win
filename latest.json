@@ -1,7 +1,7 @@
 {
-  "version": "1.0.58",
-  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.58/SlengUniquifier_Setup_v1.0.58.exe",
+  "version": "1.0.59",
+  "url":     "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.59/SlengUniquifier_Setup_v1.0.59.exe",
   "notes":   "Технічне оновлення та покращення стабільності. ",
-  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.58/SlengUniquifier_v1.0.58_x64.dmg",
-  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.58/SlengUniquifier_v1.0.58_arm64.dmg"
+  "mac_x64":  "https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.59/SlengUniquifier_v1.0.59_x64.dmg",
+  "mac_arm64":"https://github.com/Bogdan54213/sleng-uniquifier-mac-win/releases/download/v1.0.59/SlengUniquifier_v1.0.59_arm64.dmg"
 }
