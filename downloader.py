@@ -27,6 +27,18 @@ from typing import Callable, Dict, Optional
 # Тимчасова папка для завантажень. Кладемо в %LOCALAPPDATA%\SlengUniquifier\downloads
 # щоб не засмічувати tempdir системи. Очищається через окрему cleanup-логіку.
 def _downloads_dir() -> Path:
+    # Electron передає SLENG_DOWNLOAD_DIR — папку на тому ж диску, куди юзер
+    # зберігає результат. Інакше кеш осідав у %LOCALAPPDATA% на C: і забивав
+    # системний диск, навіть коли робоча папка була на іншому диску.
+    override = os.environ.get('SLENG_DOWNLOAD_DIR', '').strip()
+    if override:
+        try:
+            d = Path(override)
+            d.mkdir(parents=True, exist_ok=True)
+            return d
+        except OSError as e:
+            print(f'[download] SLENG_DOWNLOAD_DIR непридатна ({e}), беру дефолт', flush=True)
+
     base = os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA') or str(Path.home())
     d = Path(base) / 'SlengUniquifier' / 'downloads'
     d.mkdir(parents=True, exist_ok=True)

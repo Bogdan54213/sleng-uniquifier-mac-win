@@ -262,7 +262,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         job_id  = uuid.uuid4().hex[:12]
-        tmp_dir = Path(tempfile.mkdtemp(prefix='uniq_'))
+        tmp_dir = Path(tempfile.mkdtemp(prefix='uniq_', dir=_work_tmp_base()))
         safe    = Path(filename).name or 'input.mp4'
         inp     = tmp_dir / safe
         out     = tmp_dir / f"{Path(safe).stem}_unique.mp4"
@@ -602,7 +602,13 @@ class Handler(BaseHTTPRequestHandler):
             return
         # mp4 у 99% випадків (yt-dlp merge_output_format='mp4')
         print(f'[file] запит {job_id} -> {Path(file_path).name}', flush=True)
-        self._file(Path(file_path), 'video/mp4', verbose=True)
+        sent_ok = self._file(Path(file_path), 'video/mp4', verbose=True)
+
+        # Файл віддано цілим — рендерер уже тримає його в памʼяті, копія на
+        # диску більше не потрібна. Прибираємо з запасом на ретраї, інакше
+        # кеш ріс на гігабайти (за 2 години набігало 849 МБ).
+        if sent_ok:
+            threading.Timer(120, _drop_cached_download, args=(file_path,)).start()
 
     # ── Cookies management (для YouTube/Instagram приватного контенту) ────────
 
@@ -722,9 +728,11 @@ class Handler(BaseHTTPRequestHandler):
             # обрив тіла на півдорозі не лишає ЖОДНОГО сліду в лозі.
             print(f'[ERR] _file {path.name}: {type(e).__name__}: {e} '
                   f'(віддано {sent} з {size} байт за {time.time() - t0:.1f}с)', flush=True)
+            return False
         else:
             if verbose:
                 print(f'[file] {path.name}: {sent} байт за {time.time() - t0:.2f}с', flush=True)
+            return sent == size
         finally:
             fh.close()
 
@@ -863,6 +871,37 @@ def _cleanup(job_id: str, delay: int = 0):
 
 # ── Запуск ────────────────────────────────────────────────────────────────────
 
+def _work_tmp_base():
+    """Диск для робочих файлів уніфікації.
+
+    Той самий, куди юзер зберігає результат. Інакше кожен прогін тримає
+    вхідний + вихідний файли у %TEMP% на C: — для 100-мегабайтного відео
+    це ~200 МБ на системному диску, і так за кожну уніфікацію.
+    Повертає None -> tempfile візьме системну папку (як було).
+    """
+    override = os.environ.get('SLENG_DOWNLOAD_DIR', '').strip()
+    if override:
+        try:
+            base = Path(override) / 'work'
+            base.mkdir(parents=True, exist_ok=True)
+            return str(base)
+        except OSError as e:
+            print(f'[tmp] {override} непридатна ({e}), беру системну', flush=True)
+    return None
+
+
+def _drop_cached_download(file_path: str) -> None:
+    """Прибирає тимчасову копію скачаного відео після передачі у рендерер."""
+    try:
+        p = Path(file_path)
+        if p.exists():
+            size = p.stat().st_size
+            p.unlink()
+            print(f'[cache] прибрано {p.name} ({size / 1024 ** 2:.1f} МБ)', flush=True)
+    except OSError as e:
+        print(f'[cache] не вдалось прибрати {file_path}: {e}', flush=True)
+
+
 def _downloads_janitor():
     """Прибирає старі завантаження — при старті і далі раз на годину.
 
@@ -873,7 +912,7 @@ def _downloads_janitor():
     while True:
         try:
             from downloader import cleanup_old_downloads
-            n = cleanup_old_downloads(max_age_hours=24)
+            n = cleanup_old_downloads(max_age_hours=2)
             if n:
                 print(f'[janitor] видалено старих завантажень: {n}', flush=True)
         except Exception as e:

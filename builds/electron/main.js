@@ -62,6 +62,19 @@ function saveWindowBounds(win) {
   } catch { /* не критично — просто не запамʼятаємо розмір */ }
 }
 
+// Куди складати тимчасові скачування. Пріоритет — диск робочої папки.
+function downloadCacheDir() {
+  const out = getOutputDir();
+  if (!out) return '';           // порожньо -> downloader візьме свій дефолт
+  try {
+    const dir = path.join(out, '.sleng-cache');
+    fs.mkdirSync(dir, { recursive: true });
+    return dir;
+  } catch {
+    return '';
+  }
+}
+
 function uniqueOutputPath(dir, filename) {
   const parsed = path.parse(filename || 'video_unique.mp4');
   let candidate = path.join(dir, parsed.base);
@@ -228,6 +241,10 @@ function startServer() {
       // FFMPEG_DIR тепер вказує на userData/ffmpeg (ensureFfmpeg завантажив сюди).
       // Раніше було resDir — поруч з server.exe — але це 200MB на кожне auto-update.
       FFMPEG_DIR: require('./ffmpeg_bootstrap').ffmpegDir(),
+      // Кеш скачувань кладемо на ТОЙ САМИЙ диск, куди юзер зберігає результат.
+      // Раніше він завжди жив у %LOCALAPPDATA% на C: — і забивав системний
+      // диск гігабайтами, навіть коли робоча папка була на D:.
+      SLENG_DOWNLOAD_DIR: downloadCacheDir(),
     },
   });
 
