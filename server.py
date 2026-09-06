@@ -136,6 +136,8 @@ class Handler(BaseHTTPRequestHandler):
             self._admin_generate_code()
         elif p == '/api/download':
             self._start_download()
+        elif p == '/api/clientlog':
+            self._client_log()
         elif p == '/api/cookies/upload':
             self._cookies_upload()
         elif p == '/api/cookies/delete':
@@ -409,6 +411,42 @@ class Handler(BaseHTTPRequestHandler):
                 job['status'] = 'cancelled'
 
         threading.Thread(target=_cleanup, args=(job_id, 2), daemon=True).start()
+        self._json(200, {'ok': True})
+
+    # ── Діагностика з фронтенду ──────────────────────────────────────────────
+
+    def _client_log(self):
+        """POST /api/clientlog — рендерер шле сюди діагностику, вона лягає в
+        server.log поряд із серверними подіями.
+
+        Навіщо: DevTools у production вимкнено (devTools: !app.isPackaged),
+        тому помилки фронтенду не лишають ЖОДНОГО сліду. Без цього каналу
+        "Failed to fetch" неможливо відрізнити від обриву тіла чи відмови
+        з'єднання — сервер такий запит просто не бачить.
+        """
+        try:
+            ln = int(self.headers.get('Content-Length', 0))
+            if ln <= 0 or ln > 256 * 1024:
+                self._json(400, {'error': 'bad_size'})
+                return
+            data = json.loads(self.rfile.read(ln).decode('utf-8', errors='replace'))
+        except Exception as e:
+            self._json(400, {'error': 'bad_json', 'detail': str(e)})
+            return
+
+        tag = str(data.get('tag', 'log'))[:40]
+        items = data.get('data')
+        if tag == 'batch' and isinstance(items, list):
+            # Пачка з черги фронтенду — кожен запис окремим рядком, з часом
+            # коли подія СТАЛАСЬ (а не коли дійшла — вони можуть різнитись).
+            for it in items[:100]:
+                ts = str(it.get('t', ''))[11:23]
+                itag = str(it.get('tag', '?'))[:40]
+                body = json.dumps(it.get('data'), ensure_ascii=False)[:1200]
+                print(f'[client] {ts} {itag}: {body}', flush=True)
+        else:
+            print(f'[client] {tag}: '
+                  f'{json.dumps(items, ensure_ascii=False)[:2000]}', flush=True)
         self._json(200, {'ok': True})
 
     # ── Download API (TikTok / Instagram / YouTube via yt-dlp) ────────────────
