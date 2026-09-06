@@ -1345,7 +1345,7 @@ input { user-select: text; }
         <span class="update-pill-dot"></span>
         <span>Доступне оновлення</span>
       </button>
-      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.60</span>
+      <span class="version-badge" id="versionBadge" title="Натисни щоб перевірити оновлення">v1.0.61</span>
     </div>
   </header>
 
@@ -2643,55 +2643,96 @@ async function diskDiagnosis() {
     const r = await fetch('/api/diskinfo');
     if (!r.ok) return null;
     const d = await r.json();
-    if (!d.low) return null;
+    // Тільки critical (<0.5 ГБ). Раніше тут було d.low (<2 ГБ) — і воно
+    // збрехало: збій повторився при 1.73 ГБ вільного, диск був ні до чого.
+    if (!d.critical) return null;
     return `замало місця на диску ${d.drive} — вільно ${d.free_gb} ГБ. `
          + `Звільни місце і спробуй ще раз.`;
   } catch (e) { return null; }
 }
 
+// Читає тіло відповіді одним із трьох способів.
+// Навіщо три: в Electron response.blob() падає з TypeError 'Failed to fetch'
+// НАВІТЬ КОЛИ тіло прийшло повністю — Resource Timing показує
+// transfer/encoded/decoded рівно у розмір файлу, а сервер лоґує успішну
+// віддачу всіх байтів. У звичайному Chromium той самий запит проходить
+// усіма трьома способами. Тому пробуємо обхідні і фіксуємо, який спрацював.
+async function fetchBodyVia(url, via) {
+  const r = await fetch(url);
+  if (!r.ok) return { httpError: r };
+  const expect = Number(r.headers.get('content-length') || 0);
+
+  if (via === 'blob') {
+    const b = await r.blob();
+    return { parts: [b], size: b.size, expect };
+  }
+  if (via === 'arrayBuffer') {
+    const buf = await r.arrayBuffer();
+    return { parts: [buf], size: buf.byteLength, expect };
+  }
+  // stream — читаємо потік вручну, минаючи і blob-сховище, і одноразову
+  // алокацію великого буфера
+  const reader = r.body.getReader();
+  const chunks = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    size += value.length;
+  }
+  return { parts: chunks, size, expect };
+}
+
+const BODY_STRATEGIES = ['blob', 'arrayBuffer', 'stream'];
+
 async function fetchDownloadedFile(jobId, filename) {
   const url = `/api/download/file/${jobId}`;
   let lastErr = '';
-  for (let attempt = 0; attempt < 6; attempt++) {
+  let fatal = false;
+
+  for (let attempt = 0; attempt < 4 && !fatal; attempt++) {
     if (attempt) await new Promise(res => setTimeout(res, 400 * attempt));
-    const t0 = performance.now();
-    let phase = 'fetch';
-    try {
-      const r = await fetch(url);
-      const headersMs = Math.round(performance.now() - t0);
-      if (!r.ok) {
-        let d = null;
-        try { d = await r.json(); } catch {}
-        lastErr = d ? [d.error, d.detail].filter(Boolean).join(': ') : `HTTP ${r.status}`;
-        clog('file.http_error', { attempt, status: r.status, headersMs, err: lastErr });
-        // Джоба зникла або файл видалено — ретраї не допоможуть
-        if (d && (d.error === 'job_not_found' || d.error === 'file_missing')) break;
-        continue;
+
+    for (const via of BODY_STRATEGIES) {
+      const t0 = performance.now();
+      try {
+        const res = await fetchBodyVia(url, via);
+
+        if (res.httpError) {
+          let d = null;
+          try { d = await res.httpError.json(); } catch {}
+          lastErr = d ? [d.error, d.detail].filter(Boolean).join(': ')
+                      : `HTTP ${res.httpError.status}`;
+          clog('file.http_error', { attempt, via, status: res.httpError.status, err: lastErr });
+          // Джоба зникла або файл видалено — ретраї не допоможуть
+          if (d && (d.error === 'job_not_found' || d.error === 'file_missing')) fatal = true;
+          break;
+        }
+
+        if (res.expect && res.size !== res.expect) {
+          lastErr = `обірване тіло (${via}): ${res.size} з ${res.expect} байт`;
+          clog('file.truncated', { attempt, via, got: res.size, expect: res.expect,
+                                   timing: netTiming(url), online: navigator.onLine });
+          continue;
+        }
+
+        clog('file.ok', { attempt, via, bytes: res.size,
+                          ms: Math.round(performance.now() - t0) });
+        return new File(res.parts, filename, { type: 'video/mp4' });
+
+      } catch (e) {
+        lastErr = `${via} -> ${e.name}: ${e.message || e}`;
+        clog('file.exception', {
+          attempt, via, err: `${e.name}: ${e.message || e}`,
+          ms: Math.round(performance.now() - t0),
+          timing: netTiming(url), online: navigator.onLine,
+        });
       }
-      phase = 'body';
-      const expect = Number(r.headers.get('content-length') || 0);
-      const blob = await r.blob();
-      const totalMs = Math.round(performance.now() - t0);
-      if (expect && blob.size !== expect) {
-        lastErr = `обірване тіло: ${blob.size} з ${expect} байт`;
-        clog('file.truncated', { attempt, got: blob.size, expect, headersMs, totalMs,
-                                 timing: netTiming(url), online: navigator.onLine });
-        continue;
-      }
-      clog('file.ok', { attempt, bytes: blob.size, headersMs, totalMs });
-      return new File([blob], filename, { type: blob.type || 'video/mp4' });
-    } catch (e) {
-      lastErr = `${e.name}: ${e.message || e}`;
-      // phase каже головне: 'fetch' = не змогли навіть з'єднатись,
-      // 'body' = з'єднались і отримали заголовки, але тіло обірвалось.
-      clog('file.exception', {
-        attempt, phase, err: lastErr,
-        ms: Math.round(performance.now() - t0),
-        timing: netTiming(url), online: navigator.onLine,
-      });
     }
   }
-  clog('file.gaveup', { attempts: 6, lastErr });
+
+  clog('file.gaveup', { lastErr });
   throw new Error(lastErr || 'невідома помилка');
 }
 
